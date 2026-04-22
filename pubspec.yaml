@@ -30,20 +30,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Firebase dependencies - Compatible versions
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.7.0
-  cloud_firestore: ^5.4.4
-  
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  change_app_package_name: ^1.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint rules are applied and activated in
+  # the `analysis_options.yaml` file. See that file for information about
+  # deactivating specific lint rules and activating additional ones.
   flutter_lints: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
@@ -56,11 +55,14 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  
-  # Fonts (optional - if using Work Sans)
-  # fonts:
-  #   - family: Work Sans
-  #     fonts:
-  #       - asset: fonts/WorkSans-Regular.ttf
-  #       - asset: fonts/WorkSans-Bold.ttf
-  #         weight: 700
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding fonts from package dependencies, see
+  # https://flutter.dev/to/font-from-package

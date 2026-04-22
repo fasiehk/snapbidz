@@ -1,135 +1,123 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'firebase_options.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
-import 'screens/home_browse_screen.dart';
-import 'screens/category_browsing_screen.dart';
-import 'screens/watchlist_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/product_details_screen.dart';
-import 'screens/chat_list_screen.dart';
-import 'screens/chat_window_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await _verifyFirebaseSetup(); // quick sanity check (non-destructive)
-  } catch (e, st) {
-    debugPrint('Firebase init failed: $e');
-    debugPrint('$st');
-  }
-  runApp(const SnapBidApp());
+void main() {
+  runApp(const MyApp());
 }
 
-// Simple, non-destructive check to confirm Auth is wired up
-Future<void> _verifyFirebaseSetup() async {
-  final app = Firebase.app();
-  debugPrint('Firebase app: ${app.name}, projectId: ${app.options.projectId}');
-  final user = await FirebaseAuth.instance.authStateChanges().first;
-  debugPrint('Firebase Auth ready. Current user: ${user?.uid ?? "none"}');
-}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-class SnapBidApp extends StatelessWidget {
-  const SnapBidApp({Key? key}) : super(key: key);
-
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SnapBid',
-      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
       theme: ThemeData(
-        primaryColor: const Color(0xFFEE6C4D),
-        scaffoldBackgroundColor: const Color(0xFF3D5A80),
-        fontFamily: 'Work Sans',
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "Hot Reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during a reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const OnboardingScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeBrowseScreen(),
-        '/categories': (context) => const CategoryBrowsingScreen(),
-        '/watchlist': (context) => const WatchlistScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/product-details': (context) => const ProductDetailsScreen(),
-        '/chat-list': (context) => const ChatListScreen(),
-        '/chat-window': (context) => const ChatWindowScreen(),
-      },
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-// Placeholder home screen
-// class HomeScreen extends StatelessWidget {
-//   const HomeScreen({Key? key}) : super(key: key);
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
 
-//   Future<void> _logout(BuildContext context) async {
-//     try {
-//       await FirebaseAuth.instance.signOut();
-//       if (context.mounted) {
-//         Navigator.of(context).pushReplacementNamed('/login');
-//       }
-//     } catch (e) {
-//       if (context.mounted) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(
-//             content: Text('Error logging out: $e'),
-//             backgroundColor: Colors.red,
-//           ),
-//         );
-//       }
-//     }
-//   }
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final user = FirebaseAuth.instance.currentUser;
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the State. Fields in a Widget subclass are always marked "final".
 
-//     return Scaffold(
-//       backgroundColor: const Color(0xFF3D5A80),
-//       appBar: AppBar(
-//         backgroundColor: const Color(0xFFEE6C4D),
-//         title: const Text('SnapBid'),
-//         centerTitle: true,
-//         actions: [
-//           IconButton(
-//             icon: const Icon(Icons.logout),
-//             tooltip: 'Logout',
-//             onPressed: () => _logout(context),
-//           ),
-//         ],
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             const Text(
-//               'Welcome to SnapBid!',
-//               style: TextStyle(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//                 color: Color(0xFFE0FBFC),
-//               ),
-//             ),
-//             const SizedBox(height: 20),
-//             if (user != null)
-//               Text(
-//                 'Logged in as: ${user.email}',
-//                 style: const TextStyle(
-//                   fontSize: 16,
-//                   color: Color(0xFFE0FBFC),
-//                 ),
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState, then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (for a horizontal axis, see Row).
+          //
+          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+          // action in the IDE, or press "p" in the console), to see the
+          // wireframe for each widget.
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
