@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb783",
+                    "surface-bright": "#fcf8ff",
+                    "primary-fixed": "#e1e0ff",
+                    "secondary-container": "#6cf8bb",
+                    "primary-container": "#6063ee",
+                    "surface-container-highest": "#e4e1ed",
+                    "primary": "#4648d4",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-primary-fixed": "#07006c",
+                    "secondary-fixed": "#6ffbbe",
+                    "tertiary": "#904900",
+                    "outline": "#767586",
+                    "outline-variant": "#c7c4d7",
+                    "surface-tint": "#494bd6",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "on-surface": "#1b1b23",
+                    "secondary-fixed-dim": "#4edea3",
+                    "on-tertiary-fixed": "#301400",
+                    "on-surface-variant": "#464554",
+                    "surface-container-high": "#e9e6f3",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f5f2fe",
+                    "inverse-surface": "#303038",
+                    "on-secondary-fixed": "#002113",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "on-primary": "#ffffff",
+                    "on-background": "#1b1b23",
+                    "surface-container": "#efecf8",
+                    "secondary": "#006c49",
+                    "inverse-primary": "#c0c1ff",
+                    "inverse-on-surface": "#f2effb",
+                    "on-secondary-fixed-variant": "#005236",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-container": "#b55d00",
+                    "surface-variant": "#e4e1ed",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "surface-dim": "#dbd8e4",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#ffdcc5",
+                    "on-secondary-container": "#00714d",
+                    "background": "#fcf8ff",
+                    "surface": "#fcf8ff",
+                    "on-primary-container": "#fffbff",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "xxxl": "64px",
+                    "xxl": "48px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "button": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-bold": ["Inter"],
+                    "h2": ["Manrope"],
+                    "h3": ["Manrope"],
+                    "h1": ["Manrope"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "button": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-bold": ["14px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "h2": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .snap-input {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .snap-input:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #6366F1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low font-body-md text-on-surface min-h-screen pb-32">
+<!-- Top Navigation Shell -->
+<header class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md w-full sticky top-0 z-50 border-b border-white/30 dark:border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-center px-6 py-4 w-full max-w-[1280px] mx-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-600" data-icon="gavel">gavel</span>
+<h1 class="text-xl font-extrabold tracking-tighter text-indigo-600 dark:text-indigo-400 font-h2">SnapBid</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-white/20 transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-500" data-icon="notifications">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-[1280px] mx-auto px-6 py-lg">
+<div class="max-w-3xl mx-auto space-y-lg">
+<!-- Header Section -->
+<div class="space-y-sm">
+<h2 class="font-h1 text-h2 text-on-surface">Create New Listing</h2>
+<p class="font-body-md text-on-surface-variant">Fill in the details to showcase your item to thousands of bidders.</p>
+</div>
+<!-- Form Container -->
+<form class="space-y-xl">
+<!-- Section 1: Photos -->
+<section class="glass-panel p-lg rounded-xl shadow-sm space-y-md">
+<div class="flex items-center justify-between">
+<h3 class="font-h3 text-h3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="photo_library">photo_library</span>
+                            Photos
+                        </h3>
+<span class="text-body-sm text-outline">0 / 6 Images</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Main Upload Dropzone -->
+<div class="col-span-2 aspect-square rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-sm bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors text-3xl" data-icon="add_a_photo">add_a_photo</span>
+<span class="font-label-bold text-outline">Add Main Photo</span>
+</div>
+<!-- Secondary Slots -->
+<div class="aspect-square rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add">add</span>
+</div>
+<div class="aspect-square rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add">add</span>
+</div>
+<div class="hidden md:flex aspect-square rounded-lg border-2 border-dashed border-outline-variant items-center justify-center bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add">add</span>
+</div>
+<div class="hidden md:flex aspect-square rounded-lg border-2 border-dashed border-outline-variant items-center justify-center bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add">add</span>
+</div>
+</div>
+</section>
+<!-- Section 2: Title & Category -->
+<section class="glass-panel p-lg rounded-xl shadow-sm space-y-md">
+<h3 class="font-h3 text-h3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="edit_note">edit_note</span>
+                        Item Basics
+                    </h3>
+<div class="space-y-lg">
+<div class="space-y-xs">
+<label class="font-label-bold text-on-surface-variant block">Listing Title</label>
+<input class="snap-input w-full p-md rounded-lg font-body-md" placeholder="e.g. Rare 1964 Vintage Chronograph" type="text"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-bold text-on-surface-variant block">Category</label>
+<div class="relative">
+<select class="snap-input w-full p-md rounded-lg font-body-md appearance-none">
+<option>Select a category</option>
+<option>Watches &amp; Jewelry</option>
+<option>Art &amp; Collectibles</option>
+<option>Fashion &amp; Accessories</option>
+<option>Electronics</option>
+<option>Real Estate</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Description -->
+<section class="glass-panel p-lg rounded-xl shadow-sm space-y-md">
+<h3 class="font-h3 text-h3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="description">description</span>
+                        Description
+                    </h3>
+<div class="space-y-xs">
+<label class="font-label-bold text-on-surface-variant block">Item Details</label>
+<textarea class="snap-input w-full p-md rounded-lg font-body-md resize-none" placeholder="Describe your item in detail, including condition, history, and any unique features..." rows="6"></textarea>
+</div>
+</section>
+<!-- Section 4: Price & Duration -->
+<section class="glass-panel p-lg rounded-xl shadow-sm space-y-md">
+<h3 class="font-h3 text-h3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+                        Auction Settings
+                    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-xs">
+<label class="font-label-bold text-on-surface-variant block">Starting Price ($)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-outline font-bold">$</span>
+<input class="snap-input w-full pl-8 p-md rounded-lg font-body-md" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-bold text-on-surface-variant block">Auction Duration</label>
+<div class="flex p-xs bg-surface-container rounded-xl gap-xs">
+<button class="flex-1 py-md rounded-lg text-body-sm font-label-bold transition-all bg-white shadow-sm text-primary" type="button">24h</button>
+<button class="flex-1 py-md rounded-lg text-body-sm font-label-bold transition-all text-outline hover:text-on-surface" type="button">7d</button>
+<button class="flex-1 py-md rounded-lg text-body-sm font-label-bold transition-all text-outline hover:text-on-surface" type="button">14d</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Terms & Submission -->
+<div class="space-y-lg pt-md">
+<label class="flex items-start gap-md cursor-pointer group">
+<div class="relative flex items-center mt-1">
+<input class="peer h-5 w-5 rounded border-outline text-primary focus:ring-primary-fixed-dim bg-white/50" type="checkbox"/>
+</div>
+<span class="text-body-sm text-on-surface-variant leading-relaxed">
+                            I agree to the <span class="text-indigo-600 font-label-bold underline decoration-indigo-200">SnapBid Terms of Service</span> and confirm that all information provided is accurate and I have the right to sell this item.
+                        </span>
+</label>
+<button class="w-full bg-primary text-on-primary py-lg rounded-xl font-button text-button shadow-[0_8px_24px_rgba(70,72,212,0.3)] hover:shadow-[0_12px_32px_rgba(70,72,212,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-md" type="submit">
+                        List Item
+                        <span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+</form>
+</div>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-3 pb-8 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-t-[24px] border-t border-white/30 dark:border-white/10 shadow-[0_-8px_32px_0_rgba(99,102,241,0.1)]">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide uppercase mt-1">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide uppercase mt-1">Watchlist</span>
+</a>
+<a class="flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl px-3 py-1 active:scale-90 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="add_circle" data-weight="fill">add_circle</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide uppercase mt-1">List</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide uppercase mt-1">Messages</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide uppercase mt-1">Profile</span>
+</a>
+</nav>
+<!-- Decorative Background Elements -->
+<div class="fixed top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] -z-10"></div>
+<div class="fixed bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] -z-10"></div>
+</body></html>

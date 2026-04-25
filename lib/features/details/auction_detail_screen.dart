@@ -8,6 +8,10 @@ import '../../core/data/dummy_data.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
+import '../auctions/repositories/auction_repository.dart';
+import '../auth/controllers/auth_controller.dart';
+import '../bids/repositories/bid_repository.dart';
+import '../bids/models/bid_model.dart';
 
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   final String auctionId;
@@ -19,6 +23,7 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _isWatched = false;
+  int _currentImageIndex = 0;
   late TextEditingController _bidController;
 
   @override
@@ -44,8 +49,16 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     return '${diff.inHours}h ${diff.inMinutes % 60}m';
   }
 
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
+
   void _showBidDialog(AuctionModel auction) {
-    _bidController.text = (auction.currentBid + 1000).toString();
+    _bidController.text = (auction.currentBid + 100).toString();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -53,16 +66,58 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       builder: (_) => _BidBottomSheet(
         currentBid: '\$${auction.currentBid}',
         controller: _bidController,
-        onPlace: () {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('🎉 Bid placed successfully!'),
-              backgroundColor: AppColors.secondary,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
-            ),
-          );
+        onPlace: () async {
+          final amount = int.tryParse(_bidController.text) ?? 0;
+          if (amount <= auction.currentBid) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bid must be higher than current bid.')));
+            return;
+          }
+          
+          final user = ref.read(authControllerProvider).value;
+          if (user == null) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please login to place a bid.')));
+            return;
+          }
+
+          try {
+            final bidRepo = ref.read(bidRepositoryProvider);
+            final auctionRepo = ref.read(auctionRepositoryProvider);
+            
+            final bid = BidModel(
+              id: '',
+              auctionId: auction.id,
+              bidderId: user.$id,
+              bidderName: user.name,
+              amount: amount,
+              timestamp: DateTime.now(),
+            );
+            
+            await bidRepo.placeBid(bid);
+            
+            await auctionRepo.updateAuction(auction.id, {
+              'currentBid': amount,
+              'totalBids': auction.totalBids + 1,
+            });
+            
+            ref.invalidate(auctionDetailProvider(auction.id));
+            ref.invalidate(myBiddedAuctionsProvider(user.$id));
+
+            if (mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('🎉 Bid placed successfully!'),
+                  backgroundColor: AppColors.secondary,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error placing bid: $e')));
+            }
+          }
         },
       ),
     );
@@ -115,12 +170,60 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                   ),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    color: AppColors.primaryFixed,
-                    child: Center(
-                      child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 100)),
-                    ),
-                  ),
+                  background: auction.imageUrls.isNotEmpty
+                      ? Stack(
+                          children: [
+                            PageView.builder(
+                              itemCount: auction.imageUrls.length,
+                              onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
+                              itemBuilder: (context, index) {
+                                return Image.network(
+                                  auction.imageUrls[index],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                );
+                              },
+                            ),
+                            if (auction.imageUrls.length > 1)
+                              Positioned(
+                                bottom: 16,
+                                left: 0,
+                                right: 0,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    auction.imageUrls.length,
+                                    (index) => Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                                      width: _currentImageIndex == index ? 12 : 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: _currentImageIndex == index ? AppColors.primary : Colors.white.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryFixed,
+                            image: auction.imageUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(auction.imageUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: auction.imageUrl == null
+                              ? Center(
+                                  child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 100)),
+                                )
+                              : null,
+                        ),
                 ),
               ),
 
@@ -213,73 +316,87 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
 
                       const SizedBox(height: AppConstants.spaceLG),
 
-                      // Recent Bids (Stubbed for now)
+                      // Recent Bids
                       Text('Recent Bids', style: AppTextStyles.titleMedium),
                       const SizedBox(height: AppConstants.spaceSM),
-                      GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD, vertical: AppConstants.spaceSM),
-                        child: Column(
-                          children: AppDummyData.bidHistory.asMap().entries.map((e) {
-                            final bid = e.value;
-                            final isFirst = e.key == 0;
-                            return Column(
-                              children: [
-                                if (e.key > 0) Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: isFirst ? AppColors.primary : AppColors.primaryFixed,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            bid.bidder.substring(0, 1),
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w700,
-                                              color: isFirst ? AppColors.onPrimary : AppColors.primaryDark,
+                      ref.watch(auctionBidsProvider(auction.id)).when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Center(child: Text('Error loading bids: $e')),
+                        data: (bids) {
+                          if (bids.isEmpty) {
+                            return GlassCard(
+                              padding: const EdgeInsets.all(AppConstants.spaceMD),
+                              child: Center(
+                                child: Text('No bids yet. Be the first!', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+                              ),
+                            );
+                          }
+                          return GlassCard(
+                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD, vertical: AppConstants.spaceSM),
+                            child: Column(
+                              children: bids.asMap().entries.map((e) {
+                                final bid = e.value;
+                                final isFirst = e.key == 0;
+                                return Column(
+                                  children: [
+                                    if (e.key > 0) Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 32,
+                                            height: 32,
+                                            decoration: BoxDecoration(
+                                              color: isFirst ? AppColors.primary : AppColors.primaryFixed,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                bid.bidderName.isNotEmpty ? bid.bidderName.substring(0, 1).toUpperCase() : 'U',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isFirst ? AppColors.onPrimary : AppColors.primaryDark,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(bid.bidder, style: AppTextStyles.titleSmall.copyWith(fontSize: 13)),
-                                                if (isFirst) ...[
-                                                  const SizedBox(width: 6),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: AppColors.secondary.withAlpha(25),
-                                                      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-                                                    ),
-                                                    child: Text('Leading', style: AppTextStyles.labelSmall.copyWith(color: AppColors.secondary, fontSize: 9)),
-                                                  ),
-                                                ]
+                                                Row(
+                                                  children: [
+                                                    Text(bid.bidderName, style: AppTextStyles.titleSmall.copyWith(fontSize: 13)),
+                                                    if (isFirst) ...[
+                                                      const SizedBox(width: 6),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.secondary.withAlpha(25),
+                                                          borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                                                        ),
+                                                        child: Text('Leading', style: AppTextStyles.labelSmall.copyWith(color: AppColors.secondary, fontSize: 9)),
+                                                      ),
+                                                    ]
+                                                  ],
+                                                ),
+                                                Text(_timeAgo(bid.timestamp), style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
                                               ],
                                             ),
-                                            Text(bid.time, style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-                                          ],
-                                        ),
+                                          ),
+                                          Text(_formatCurrency(bid.amount), style: AppTextStyles.priceSmall),
+                                        ],
                                       ),
-                                      Text(bid.amount, style: AppTextStyles.priceSmall),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 100), // bottom padding for FAB

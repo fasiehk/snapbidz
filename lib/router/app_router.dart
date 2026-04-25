@@ -13,6 +13,7 @@ import '../features/messages/chat_window_screen.dart';
 import '../features/bids/my_bids_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/create_listing/create_listing_screen.dart';
+import '../features/create_listing/edit_listing_screen.dart';
 import '../features/main/main_shell.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -79,6 +80,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/create-listing',
       builder: (context, state) => const CreateListingScreen(),
+    ),
+    GoRoute(
+      path: '/edit-listing',
+      builder: (context, state) {
+        final auction = state.extra as dynamic; // Cast to AuctionModel in builder
+        return EditListingScreen(auction: auction);
+      },
     ),
   ],
 );

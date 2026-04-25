@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/data/dummy_data.dart';
 import '../../core/widgets/glass_card.dart';
+import '../auctions/controllers/auction_controller.dart';
+import '../auctions/models/auction_model.dart';
+import '../auth/controllers/auth_controller.dart';
 
-class MyBidsScreen extends StatefulWidget {
+class MyBidsScreen extends ConsumerStatefulWidget {
   const MyBidsScreen({super.key});
 
   @override
-  State<MyBidsScreen> createState() => _MyBidsScreenState();
+  ConsumerState<MyBidsScreen> createState() => _MyBidsScreenState();
 }
 
-class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderStateMixin {
+class _MyBidsScreenState extends ConsumerState<MyBidsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -27,11 +32,10 @@ class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  List<DummyAuction> _filtered(String status) =>
-      AppDummyData.myBids.where((a) => a.status == status).toList();
-
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authControllerProvider).value;
+    
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -41,28 +45,15 @@ class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderSt
             // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(AppConstants.spaceLG, AppConstants.spaceMD, AppConstants.spaceLG, 0),
-              child: Text('My Listings', style: AppTextStyles.headlineMedium),
-            ),
-
-            const SizedBox(height: AppConstants.spaceMD),
-
-            // ── Stats row ───────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-              child: GlassCard(
-                padding: const EdgeInsets.all(AppConstants.spaceMD),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _Stat(label: 'Active', value: '1', color: AppColors.timerAmber),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _Stat(label: 'Won', value: '1', color: AppColors.secondary),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _Stat(label: 'Lost', value: '1', color: AppColors.accent),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _Stat(label: 'Total Spent', value: '\$4.2k', color: AppColors.primary),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () => context.pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('My Bids & Listings', style: AppTextStyles.headlineMedium),
+                ],
               ),
             ),
 
@@ -90,9 +81,8 @@ class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderSt
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   tabs: const [
-                    Tab(text: 'Active'),
-                    Tab(text: 'Won'),
-                    Tab(text: 'Lost'),
+                    Tab(text: 'My Listings'),
+                    Tab(text: 'My Bids'),
                   ],
                 ),
               ),
@@ -105,9 +95,22 @@ class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderSt
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _BidList(items: _filtered('active'), emptyMessage: 'No active bids'),
-                  _BidList(items: _filtered('won'), emptyMessage: 'No won auctions yet'),
-                  _BidList(items: _filtered('lost'), emptyMessage: 'No lost auctions'),
+                  // My Listings
+                  user == null 
+                    ? const Center(child: Text('Please login to view listings'))
+                    : ref.watch(myListingsProvider(user.$id)).when(
+                        data: (listings) => _DynamicListingList(items: listings, emptyMessage: 'You haven\'t posted any listings yet.', isMyListing: true),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Center(child: Text('Error: $e')),
+                      ),
+                  // My Bids
+                  user == null 
+                    ? const Center(child: Text('Please login to view your bids'))
+                    : ref.watch(myBiddedAuctionsProvider(user.$id)).when(
+                        data: (auctions) => _DynamicListingList(items: auctions, emptyMessage: 'You haven\'t bid on anything yet.', isMyListing: false),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Center(child: Text('Error: $e')),
+                      ),
                 ],
               ),
             ),
@@ -118,27 +121,11 @@ class _MyBidsScreenState extends State<MyBidsScreen> with SingleTickerProviderSt
   }
 }
 
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _Stat({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: AppTextStyles.titleMedium.copyWith(color: color)),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-      ],
-    );
-  }
-}
-
-class _BidList extends StatelessWidget {
-  final List<DummyAuction> items;
+class _DynamicListingList extends StatelessWidget {
+  final List<AuctionModel> items;
   final String emptyMessage;
-  const _BidList({required this.items, required this.emptyMessage});
+  final bool isMyListing;
+  const _DynamicListingList({required this.items, required this.emptyMessage, required this.isMyListing});
 
   @override
   Widget build(BuildContext context) {
@@ -155,88 +142,131 @@ class _BidList extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG, vertical: AppConstants.spaceMD),
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, i) => _BidCard(auction: items[i]),
+      itemBuilder: (context, i) => _DynamicListingCard(auction: items[i], isMyListing: isMyListing),
     );
   }
 }
 
-class _BidCard extends StatelessWidget {
-  final DummyAuction auction;
-  const _BidCard({required this.auction});
-
-  Color get _statusColor => switch (auction.status) {
-    'won' => AppColors.secondary,
-    'lost' => AppColors.accent,
-    _ => AppColors.timerAmber,
-  };
-
-  String get _statusLabel => switch (auction.status) {
-    'won' => '🏆 Won',
-    'lost' => '❌ Outbid',
-    _ => '🔥 Active',
-  };
+class _DynamicListingCard extends StatelessWidget {
+  final AuctionModel auction;
+  final bool isMyListing;
+  const _DynamicListingCard({required this.auction, required this.isMyListing});
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(AppConstants.spaceMD),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryFixed,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMD),
-                ),
-                child: Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 30))),
+    return GestureDetector(
+      onTap: () {
+        if (!isMyListing) {
+          context.push('/auction/${auction.id}');
+          return;
+        }
+        // Show options: View Details or Edit
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          builder: (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Manage Listing', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.visibility, color: AppColors.primary),
+                    title: const Text('View Listing'),
+                    onTap: () {
+                      context.pop();
+                      context.push('/auction/${auction.id}');
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit, color: AppColors.primary),
+                    title: const Text('Edit Details'),
+                    onTap: () {
+                      context.pop();
+                      context.push('/edit-listing', extra: auction);
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: AppConstants.spaceMD),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: Text(auction.title, style: AppTextStyles.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: _statusColor.withAlpha(25),
-                            borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+            ),
+          ),
+        );
+      },
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppConstants.spaceMD),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryFixed,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                    image: auction.imageUrl != null
+                        ? DecorationImage(image: NetworkImage(auction.imageUrl!), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: auction.imageUrl == null
+                      ? Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 30)))
+                      : null,
+                ),
+                const SizedBox(width: AppConstants.spaceMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(auction.title, style: AppTextStyles.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withAlpha(25),
+                              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                            ),
+                            child: Text(auction.status, style: AppTextStyles.labelSmall.copyWith(color: AppColors.secondary, fontSize: 10)),
                           ),
-                          child: Text(_statusLabel, style: AppTextStyles.labelSmall.copyWith(color: _statusColor, fontSize: 10)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(auction.subtitle, style: AppTextStyles.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(auction.category, style: AppTextStyles.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppConstants.spaceSM),
-          Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
-          const SizedBox(height: AppConstants.spaceSM),
-          Row(
-            children: [
-              _InfoCell(label: 'Current Bid', value: auction.currentBid),
-              _InfoCell(label: 'Total Bids', value: '${auction.totalBids}'),
-              _InfoCell(label: 'Time', value: auction.timeLeft),
-            ],
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: AppConstants.spaceSM),
+            Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
+            const SizedBox(height: AppConstants.spaceSM),
+            Row(
+              children: [
+                _InfoCell(label: 'Current Bid', value: '\$${auction.currentBid}'),
+                _InfoCell(label: 'Total Bids', value: '${auction.totalBids}'),
+                _InfoCell(
+                  label: 'Ends', 
+                  value: '${auction.endTime.day}/${auction.endTime.month}/${auction.endTime.year}',
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+
 
 class _InfoCell extends StatelessWidget {
   final String label;

@@ -5,13 +5,17 @@ import '../../../core/providers/appwrite_providers.dart';
 import '../models/auction_model.dart';
 
 final auctionRepositoryProvider = Provider<AuctionRepository>((ref) {
-  return AuctionRepository(ref.watch(appwriteDatabaseProvider));
+  return AuctionRepository(
+    ref.watch(appwriteDatabaseProvider),
+    ref.watch(appwriteStorageProvider),
+  );
 });
 
 class AuctionRepository {
   final Databases _databases;
+  final Storage _storage;
 
-  AuctionRepository(this._databases);
+  AuctionRepository(this._databases, this._storage);
 
   Future<List<AuctionModel>> getAuctions({List<String>? queries}) async {
     try {
@@ -51,6 +55,33 @@ class AuctionRepository {
         data: auction.toMap(),
       );
       return AuctionModel.fromMap(doc.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<AuctionModel> updateAuction(String id, Map<String, dynamic> data) async {
+    try {
+      final doc = await _databases.updateDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: AppConstants.auctionsCollection,
+        documentId: id,
+        data: data,
+      );
+      return AuctionModel.fromMap(doc.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> uploadImage(List<int> bytes, String filename) async {
+    try {
+      final file = await _storage.createFile(
+        bucketId: AppConstants.auctionImagesBucket,
+        fileId: ID.unique(),
+        file: InputFile.fromBytes(bytes: bytes, filename: filename),
+      );
+      return '${AppConstants.appwriteEndpoint}/storage/buckets/${AppConstants.auctionImagesBucket}/files/${file.$id}/view?project=${AppConstants.appwriteProjectId}';
     } catch (e) {
       rethrow;
     }

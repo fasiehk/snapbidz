@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/controllers/auth_controller.dart';
 
@@ -87,6 +88,11 @@ class ProfileScreen extends ConsumerWidget {
 
               const SizedBox(height: AppConstants.spaceLG),
 
+              // ── Post an Item CTA ───────────────────────────────────────────
+              _SellerCtaCard(onPostItem: () => context.push('/create-listing')),
+
+              const SizedBox(height: AppConstants.spaceLG),
+
               // ── Seller Reputation ──────────────────────────────────────────
               Align(
                 alignment: Alignment.centerLeft,
@@ -145,6 +151,133 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Seller CTA Card ───────────────────────────────────────────────────────────
+
+class _SellerCtaCard extends StatelessWidget {
+  final VoidCallback onPostItem;
+  const _SellerCtaCard({required this.onPostItem});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppConstants.radiusLG),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4A00E0).withAlpha(80),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.spaceLG),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header row ────────────────────────────────────────────────
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(30),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                  ),
+                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: AppConstants.spaceMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Start Selling Today',
+                        style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+                      ),
+                      Text(
+                        'List your items & let the bidding begin',
+                        style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withAlpha(200)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppConstants.spaceMD),
+
+            // ── Feature pills ─────────────────────────────────────────────
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _FeaturePill(icon: Icons.visibility_rounded, label: 'Visible to all users'),
+                _FeaturePill(icon: Icons.gavel_rounded, label: 'Live bidding'),
+                _FeaturePill(icon: Icons.timer_outlined, label: 'Custom duration'),
+              ],
+            ),
+
+            const SizedBox(height: AppConstants.spaceLG),
+
+            // ── Action button ─────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onPostItem,
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                label: const Text('Post an Item'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF4A00E0),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: AppTextStyles.labelLarge,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _FeaturePill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(30),
+        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+        border: Border.all(color: Colors.white.withAlpha(60)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white),
+          const SizedBox(width: 5),
+          Text(label, style: AppTextStyles.labelSmall.copyWith(color: Colors.white)),
+        ],
       ),
     );
   }

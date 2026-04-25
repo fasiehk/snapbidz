@@ -326,8 +326,16 @@ class _TrendingCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.primaryFixed,
                 borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                image: auction.imageUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(auction.imageUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 52))),
+              child: auction.imageUrl == null
+                  ? Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 52)))
+                  : null,
             ),
             const SizedBox(height: AppConstants.spaceSM),
             // Category chip
@@ -399,8 +407,16 @@ class _RecentListingCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.primaryFixed,
               borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+              image: auction.imageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(auction.imageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 30))),
+            child: auction.imageUrl == null
+                ? Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 30)))
+                : null,
           ),
           const SizedBox(width: AppConstants.spaceMD),
           Expanded(

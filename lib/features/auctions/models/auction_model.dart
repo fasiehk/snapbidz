@@ -5,6 +5,8 @@ class AuctionModel {
   final String category;
   final String description;
   final String imageEmoji;
+  final String? imageUrl;
+  final List<String> imageUrls;
   final int currentBid;
   final int totalBids;
   final String status;
@@ -19,6 +21,8 @@ class AuctionModel {
     required this.category,
     required this.description,
     required this.imageEmoji,
+    this.imageUrl,
+    this.imageUrls = const [],
     required this.currentBid,
     required this.totalBids,
     required this.status,
@@ -35,6 +39,10 @@ class AuctionModel {
       category: map['category'] ?? '',
       description: map['description'] ?? '',
       imageEmoji: map['imageEmoji'] ?? '📦',
+      imageUrl: map['imageUrl'],
+      imageUrls: map['imageUrls'] != null 
+          ? List<String>.from(map['imageUrls']) 
+          : (map['imageUrl'] != null ? [map['imageUrl']] : []),
       currentBid: map['currentBid']?.toInt() ?? 0,
       totalBids: map['totalBids']?.toInt() ?? 0,
       status: map['status'] ?? 'active',
@@ -51,6 +59,8 @@ class AuctionModel {
       'category': category,
       'description': description,
       'imageEmoji': imageEmoji,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      if (imageUrls.isNotEmpty) 'imageUrls': imageUrls,
       'currentBid': currentBid,
       'totalBids': totalBids,
       'status': status,
