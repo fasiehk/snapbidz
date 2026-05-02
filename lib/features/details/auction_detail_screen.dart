@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:appwrite/appwrite.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/data/dummy_data.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
@@ -12,6 +12,7 @@ import '../auctions/repositories/auction_repository.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../bids/repositories/bid_repository.dart';
 import '../bids/models/bid_model.dart';
+import '../seller_verification/controllers/seller_verification_controller.dart';
 
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   final String auctionId;
@@ -57,6 +58,32 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     return 'Just now';
   }
 
+  void _messageSeller(AuctionModel auction) {
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to message the seller.')),
+      );
+      return;
+    }
+    // Don't allow sellers to message themselves
+    if (user.$id == auction.sellerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This is your own listing.')),
+      );
+      return;
+    }
+    context.push(
+      '/chat/${auction.id}',
+      extra: {
+        'auctionTitle': auction.title,
+        'otherUserId': auction.sellerId,
+        'otherUserName': auction.sellerName,
+        'currentBid': '\$${auction.currentBid}',
+      },
+    );
+  }
+
   void _showBidDialog(AuctionModel auction) {
     _bidController.text = (auction.currentBid + 100).toString();
     showModalBottomSheet(
@@ -79,6 +106,48 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
             return;
           }
 
+          // ── Buyer profile completeness check ─────────────────────────────
+          final isComplete = await ref
+              .read(sellerProfileProvider.notifier)
+              .isProfileComplete(user.$id);
+          if (!isComplete) {
+            if (context.mounted) {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  title: const Row(children: [
+                    Icon(Icons.person_off_rounded,
+                        color: AppColors.accent, size: 22),
+                    SizedBox(width: 8),
+                    Text('Profile Incomplete'),
+                  ]),
+                  content: const Text(
+                      'You need to complete your profile before placing a bid. It only takes a minute!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/seller-verify', extra: {'redirectPath': '/auction/${auction.id}'});
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary),
+                      child: const Text('Complete Profile',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return;
+          }
+
           try {
             final bidRepo = ref.read(bidRepositoryProvider);
             final auctionRepo = ref.read(auctionRepositoryProvider);
@@ -94,14 +163,32 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
             
             await bidRepo.placeBid(bid);
             
+            // Fetch all bids for this auction to calculate the new highest bid
+            final allBids = await bidRepo.getBids(queries: [
+              Query.equal('auctionId', auction.id),
+              Query.orderDesc('amount'),
+            ]);
+            
+            final newHighestBid = allBids.isNotEmpty ? allBids.first.amount : amount;
+            final newTotalBids = allBids.length;
+            
             await auctionRepo.updateAuction(auction.id, {
-              'currentBid': amount,
-              'totalBids': auction.totalBids + 1,
+              'currentBid': newHighestBid,
+              'totalBids': newTotalBids,
             });
             
             ref.invalidate(auctionDetailProvider(auction.id));
+            ref.invalidate(auctionBidsProvider(auction.id));
             ref.invalidate(myBiddedAuctionsProvider(user.$id));
-
+            
+            // Invalidate seller's listings to reflect the new bid
+            ref.invalidate(myListingsProvider(auction.sellerId));
+            
+            // Invalidate global auction providers to update listings across the app
+            ref.invalidate(allAuctionsProvider);
+            ref.invalidate(recentAuctionsProvider);
+            ref.invalidate(trendingAuctionsProvider);
+            
             if (mounted) {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +213,15 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final auctionAsync = ref.watch(auctionDetailProvider(widget.auctionId));
+    final bidsAsync = ref.watch(auctionBidsProvider(widget.auctionId));
+
+    // Calculate display values at build level for access in bottomNavigationBar
+    int displayCurrentBid = 0;
+    if (auctionAsync.hasValue && bidsAsync.hasValue) {
+      final auction = auctionAsync.value!;
+      final bids = bidsAsync.value ?? [];
+      final displayCurrentBid = bids.isNotEmpty ? bids.map((b) => b.amount).reduce((a, b) => a > b ? a : b) : auction.currentBid;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -133,6 +229,14 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (err, _) => Center(child: Text('Error: $err', style: TextStyle(color: AppColors.error))),
         data: (auction) {
+          // Recalculate inside data callback for use in the body
+          final bids = bidsAsync.value ?? [];
+          final actualHighestBid = bids.isNotEmpty ? bids.map((b) => b.amount).reduce((a, b) => a > b ? a : b) : auction.currentBid;
+          final actualTotalBids = bids.length;
+          
+          final bodyDisplayCurrentBid = actualHighestBid;
+          final bodyDisplayTotalBids = actualTotalBids;
+          
           return CustomScrollView(
             slivers: [
               // ── Hero Image ───────────────────────────────────────────────────
@@ -288,7 +392,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                         padding: const EdgeInsets.all(AppConstants.spaceMD),
                         child: Row(
                           children: [
-                            _StatBox(label: 'Current Bid', value: _formatCurrency(auction.currentBid), valueStyle: AppTextStyles.priceLarge),
+                            _StatBox(label: 'Current Bid', value: _formatCurrency(bodyDisplayCurrentBid), valueStyle: AppTextStyles.priceLarge),
                             const SizedBox(width: 1),
                             Container(width: 1, height: 48, color: AppColors.outlineVariant),
                             const SizedBox(width: 1),
@@ -296,7 +400,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                             const SizedBox(width: 1),
                             Container(width: 1, height: 48, color: AppColors.outlineVariant),
                             const SizedBox(width: 1),
-                            _StatBox(label: 'Total Bids', value: '${auction.totalBids}', valueStyle: AppTextStyles.headlineSmall),
+                            _StatBox(label: 'Total Bids', value: '$bodyDisplayTotalBids', valueStyle: AppTextStyles.headlineSmall),
                           ],
                         ),
                       ),
@@ -417,43 +521,76 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           color: Colors.white.withAlpha(230),
           border: Border(top: BorderSide(color: AppColors.outlineVariant.withAlpha(60))),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Minimum next bid', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-                  Text('\$${auctionAsync.value!.currentBid + 100}', style: AppTextStyles.priceMedium),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppConstants.spaceMD),
-            SizedBox(
-              height: 52,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
-                  borderRadius: BorderRadius.circular(AppConstants.radiusSM),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 14, offset: const Offset(0, 6))],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: () => _showBidDialog(auctionAsync.value!),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    foregroundColor: AppColors.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Builder(builder: (context) {
+          final auction = auctionAsync.value!;
+          final user = ref.watch(authControllerProvider).value;
+          final isSeller = user != null && user.$id == auction.sellerId;
+
+          if (isSeller) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.stars_rounded, color: AppColors.primary, size: 24),
+                const SizedBox(width: AppConstants.spaceSM),
+                Text('This is your listing', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              // Message Seller button
+              Padding(
+                padding: const EdgeInsets.only(right: AppConstants.spaceSM),
+                child: OutlinedButton.icon(
+                  onPressed: () => _messageSeller(auction),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text('Chat'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                   ),
-                  icon: const Icon(Icons.gavel_rounded, size: 20),
-                  label: Text('Place Bid', style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary, fontSize: 16)),
                 ),
               ),
-            ),
-          ],
-        ),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Minimum next bid', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                    Text('\$${displayCurrentBid + 100}', style: AppTextStyles.priceMedium),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppConstants.spaceMD),
+              SizedBox(
+                height: 52,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusSM),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 14, offset: const Offset(0, 6))],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showBidDialog(auction),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: AppColors.onPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                    ),
+                    icon: const Icon(Icons.gavel_rounded, size: 20),
+                    label: Text('Place Bid', style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary, fontSize: 16)),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
       ) : const SizedBox.shrink(),
     );
   }

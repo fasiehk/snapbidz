@@ -91,7 +91,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         for (var img in _selectedImages) {
           final bytes = await img.readAsBytes();
           final url = await ref.read(auctionRepositoryProvider).uploadImage(bytes, img.name);
-          if (url != null) uploadedUrls.add(url);
+          uploadedUrls.add(url);
         }
         if (uploadedUrls.isNotEmpty) imageUrl = uploadedUrls.first;
       }
@@ -275,7 +275,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   elevation: 0,
                   leading: IconButton(
                     icon: const Icon(Icons.close_rounded, color: Color(0xFF1b1b23)),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    },
                   ),
                   flexibleSpace: ClipRRect(
                     child: BackdropFilter(
@@ -340,7 +346,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                               children: [
                                 _buildSectionTitle(Icons.photo_library_outlined, 'Photos'),
                                 Text(
-                                  '\${_selectedImages.length} / 10 Images',
+                                  '${_selectedImages.length} / 10 Images',
                                   style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 14,

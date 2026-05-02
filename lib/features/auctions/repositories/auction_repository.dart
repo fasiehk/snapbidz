@@ -74,6 +74,19 @@ class AuctionRepository {
     }
   }
 
+  Future<void> deleteAuction(String id) async {
+    try {
+      await _databases.updateDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: AppConstants.auctionsCollection,
+        documentId: id,
+        data: {'status': 'deleted'},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<String> uploadImage(List<int> bytes, String filename) async {
     try {
       final file = await _storage.createFile(

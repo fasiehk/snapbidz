@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auctions/models/auction_model.dart';
 import '../auctions/repositories/auction_repository.dart';
 import '../auctions/controllers/auction_controller.dart';
-import '../../core/constants/app_colors.dart';
 
 class EditListingScreen extends ConsumerStatefulWidget {
   final AuctionModel auction;

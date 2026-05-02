@@ -4,10 +4,10 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/controllers/auth_controller.dart';
+import '../auctions/controllers/auction_controller.dart';
+import '../seller_verification/controllers/seller_verification_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -70,26 +70,48 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: AppConstants.spaceLG),
 
               // ── Stats ──────────────────────────────────────────────────────
-              GlassCard(
-                padding: const EdgeInsets.all(AppConstants.spaceMD),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _ProfileStat(value: '47', label: 'Bids Won'),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _ProfileStat(value: '12', label: 'Listed'),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _ProfileStat(value: '4.9★', label: 'Rating'),
-                    Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                    _ProfileStat(value: '\$2.1M', label: 'Volume'),
-                  ],
-                ),
-              ),
+              user == null
+                  ? const SizedBox()
+                  : ref.watch(profileStatsProvider(user.$id)).when(
+                      loading: () => GlassCard(
+                        padding: const EdgeInsets.all(AppConstants.spaceMD),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      error: (err, _) => const SizedBox(),
+                      data: (stats) => GlassCard(
+                        padding: const EdgeInsets.all(AppConstants.spaceMD),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _ProfileStat(value: stats['bids']!, label: 'Active Bids'),
+                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
+                            _ProfileStat(value: stats['listed']!, label: 'Listed'),
+                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
+                            _ProfileStat(value: stats['rating']!, label: 'Rating'),
+                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
+                            _ProfileStat(value: stats['volume']!, label: 'Volume'),
+                          ],
+                        ),
+                      ),
+                    ),
 
               const SizedBox(height: AppConstants.spaceLG),
 
               // ── Post an Item CTA ───────────────────────────────────────────
-              _SellerCtaCard(onPostItem: () => context.push('/create-listing')),
+              _SellerCtaCard(
+                onPostItem: () async {
+                  if (user == null) return;
+                  final isComplete = await ref
+                      .read(sellerProfileProvider.notifier)
+                      .isProfileComplete(user.$id);
+                  if (!context.mounted) return;
+                  if (isComplete) {
+                    context.push('/create-listing');
+                  } else {
+                    context.push('/seller-verify');
+                  }
+                },
+              ),
 
               const SizedBox(height: AppConstants.spaceLG),
 

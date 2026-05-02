@@ -1,7 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 import '../repositories/auth_repository.dart';
 
 final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<models.User?>>((ref) {

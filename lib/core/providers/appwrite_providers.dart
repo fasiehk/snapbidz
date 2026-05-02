@@ -20,3 +20,7 @@ final appwriteDatabaseProvider = Provider<Databases>((ref) {
 final appwriteStorageProvider = Provider<Storage>((ref) {
   return Storage(ref.watch(appwriteClientProvider));
 });
+
+final appwriteRealtimeProvider = Provider<Realtime>((ref) {
+  return Realtime(ref.watch(appwriteClientProvider));
+});

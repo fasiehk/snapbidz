@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -15,6 +14,7 @@ import '../features/profile/profile_screen.dart';
 import '../features/create_listing/create_listing_screen.dart';
 import '../features/create_listing/edit_listing_screen.dart';
 import '../features/main/main_shell.dart';
+import '../features/seller_verification/seller_verification_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -67,11 +67,20 @@ final GoRouter appRouter = GoRouter(
         auctionId: state.pathParameters['id'] ?? '',
       ),
     ),
+    // Chat route — pass auctionId in path, extras for names
     GoRoute(
-      path: '/chat/:userId',
-      builder: (context, state) => ChatWindowScreen(
-        userId: state.pathParameters['userId'] ?? '',
-      ),
+      path: '/chat/:auctionId',
+      builder: (context, state) {
+        final auctionId = state.pathParameters['auctionId'] ?? '';
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ChatWindowScreen(
+          auctionId: auctionId,
+          auctionTitle: extra['auctionTitle'] as String? ?? 'Auction',
+          otherUserId: extra['otherUserId'] as String? ?? '',
+          otherUserName: extra['otherUserName'] as String? ?? 'User',
+          currentBid: extra['currentBid'] as String? ?? '',
+        );
+      },
     ),
     GoRoute(
       path: '/my-bids',
@@ -84,8 +93,16 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/edit-listing',
       builder: (context, state) {
-        final auction = state.extra as dynamic; // Cast to AuctionModel in builder
+        final auction = state.extra as dynamic;
         return EditListingScreen(auction: auction);
+      },
+    ),
+    // Seller verification / KYC screen
+    GoRoute(
+      path: '/seller-verify',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return SellerVerificationScreen(redirectPath: extra['redirectPath'] as String?);
       },
     ),
   ],

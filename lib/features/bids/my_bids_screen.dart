@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/data/dummy_data.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
+import '../auctions/repositories/auction_repository.dart';
 import '../auth/controllers/auth_controller.dart';
 
 class MyBidsScreen extends ConsumerStatefulWidget {
@@ -150,13 +150,13 @@ class _DynamicListingList extends StatelessWidget {
   }
 }
 
-class _DynamicListingCard extends StatelessWidget {
+class _DynamicListingCard extends ConsumerWidget {
   final AuctionModel auction;
   final bool isMyListing;
   const _DynamicListingCard({required this.auction, required this.isMyListing});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
         if (!isMyListing) {
@@ -192,6 +192,46 @@ class _DynamicListingCard extends StatelessWidget {
                     onTap: () {
                       context.pop();
                       context.push('/edit-listing', extra: auction);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                    title: const Text('Delete Listing', style: TextStyle(color: AppColors.error)),
+                    onTap: () async {
+                      context.pop();
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete Listing'),
+                          content: const Text('Are you sure you want to delete this listing? This action cannot be undone.'),
+                          actions: [
+                            TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancel')),
+                            TextButton(onPressed: () => ctx.pop(true), child: const Text('Delete', style: TextStyle(color: AppColors.error))),
+                          ],
+                        ),
+                      );
+                      
+                      if (confirm == true) {
+                        try {
+                          await ref.read(auctionRepositoryProvider).deleteAuction(auction.id);
+                          final user = ref.read(authControllerProvider).value;
+                          if (user != null) {
+                            ref.invalidate(myListingsProvider(user.$id));
+                            ref.invalidate(profileStatsProvider(user.$id));
+                          }
+                          ref.invalidate(allAuctionsProvider);
+                          ref.invalidate(recentAuctionsProvider);
+                          ref.invalidate(trendingAuctionsProvider);
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing deleted successfully')));
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                          }
+                        }
+                      }
                     },
                   ),
                 ],

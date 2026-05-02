@@ -4,20 +4,36 @@ import '../models/auction_model.dart';
 import '../repositories/auction_repository.dart';
 import '../../bids/repositories/bid_repository.dart';
 import '../../bids/models/bid_model.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 final trendingAuctionsProvider = FutureProvider<List<AuctionModel>>((ref) async {
   final repo = ref.watch(auctionRepositoryProvider);
-  return repo.getAuctions(queries: [Query.limit(5), Query.orderDesc('totalBids')]);
+  final user = ref.watch(authControllerProvider).value;
+  final auctions = await repo.getAuctions(queries: [Query.limit(15), Query.orderDesc('totalBids')]);
+  if (user != null) {
+    return auctions.where((a) => a.sellerId != user.$id).take(5).toList();
+  }
+  return auctions.take(5).toList();
 });
 
 final recentAuctionsProvider = FutureProvider<List<AuctionModel>>((ref) async {
   final repo = ref.watch(auctionRepositoryProvider);
-  return repo.getAuctions(queries: [Query.limit(5), Query.orderDesc('\$createdAt')]);
+  final user = ref.watch(authControllerProvider).value;
+  final auctions = await repo.getAuctions(queries: [Query.limit(15), Query.orderDesc('\$createdAt')]);
+  if (user != null) {
+    return auctions.where((a) => a.sellerId != user.$id).take(5).toList();
+  }
+  return auctions.take(5).toList();
 });
 
 final allAuctionsProvider = FutureProvider<List<AuctionModel>>((ref) async {
   final repo = ref.watch(auctionRepositoryProvider);
-  return repo.getAuctions();
+  final user = ref.watch(authControllerProvider).value;
+  final auctions = await repo.getAuctions();
+  if (user != null) {
+    return auctions.where((a) => a.sellerId != user.$id).toList();
+  }
+  return auctions;
 });
 
 final auctionDetailProvider = FutureProvider.family<AuctionModel, String>((ref, id) async {
@@ -53,4 +69,33 @@ final auctionBidsProvider = FutureProvider.family<List<BidModel>, String>((ref, 
     Query.equal('auctionId', auctionId),
     Query.orderDesc('createdAt'),
   ]);
+});
+
+final profileStatsProvider = FutureProvider.family<Map<String, String>, String>((ref, userId) async {
+  final listings = await ref.watch(myListingsProvider(userId).future);
+  final biddedAuctions = await ref.watch(myBiddedAuctionsProvider(userId).future);
+
+  final listedCount = listings.length;
+  final bidsCount = biddedAuctions.length;
+  
+  double totalVolume = 0;
+  for (var auction in listings) {
+    totalVolume += auction.currentBid;
+  }
+
+  String formattedVolume = '\$0';
+  if (totalVolume >= 1000000) {
+    formattedVolume = '\$${(totalVolume / 1000000).toStringAsFixed(1)}M';
+  } else if (totalVolume >= 1000) {
+    formattedVolume = '\$${(totalVolume / 1000).toStringAsFixed(1)}k';
+  } else {
+    formattedVolume = '\$${totalVolume.toInt()}';
+  }
+
+  return {
+    'listed': listedCount.toString(),
+    'bids': bidsCount.toString(),
+    'volume': formattedVolume,
+    'rating': '4.9★',
+  };
 });
