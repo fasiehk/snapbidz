@@ -15,6 +15,7 @@ import '../bids/models/bid_model.dart';
 import '../seller_verification/controllers/seller_verification_controller.dart';
 import '../watchlist/controllers/watchlist_controller.dart';
 import '../watchlist/repositories/watchlist_repository.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   final String auctionId;
@@ -146,9 +147,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     }
     // Don't allow sellers to message themselves
     if (user.$id == auction.sellerId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This is your own listing.')),
-      );
+      SnackBarUtils.showInfo(context, 'This is your own listing.');
       return;
     }
     context.push(
@@ -181,7 +180,41 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           
           final user = ref.read(authControllerProvider).value;
           if (user == null) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please login to place a bid.')));
+            SnackBarUtils.showError(context, 'Please login to place a bid.');
+            return;
+          }
+
+          // ── Email Verification Check ─────────────────────────────────────
+          if (!user.emailVerification) {
+            if (context.mounted) {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Row(children: [
+                    Icon(Icons.mark_email_unread_rounded, color: AppColors.accent, size: 22),
+                    SizedBox(width: 8),
+                    Text('Email Not Verified'),
+                  ]),
+                  content: const Text('You must verify your email address before you can place a bid.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/profile/edit');
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                      child: const Text('Go to Profile', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+            }
             return;
           }
 

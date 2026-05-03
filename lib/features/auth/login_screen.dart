@@ -10,6 +10,7 @@ import '../../core/widgets/app_text_field.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controllers/auth_controller.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 /// Screen 3 — Login Screen
 class LoginScreen extends ConsumerStatefulWidget {
@@ -46,12 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        SnackBarUtils.showError(context, e.toString());
       }
     }
   }
@@ -139,7 +135,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              if (_emailController.text.isNotEmpty) {
+                                try {
+                                  await ref.read(authControllerProvider.notifier).forgotPassword(_emailController.text.trim());
+                                  if (mounted) SnackBarUtils.showInfo(context, 'Password reset email sent!');
+                                } catch (e) {
+                                  if (mounted) SnackBarUtils.showError(context, e.toString());
+                                }
+                              } else {
+                                SnackBarUtils.showError(context, 'Please enter your email first.');
+                              }
+                            },
                             child: Text(
                               'Forgot Password?',
                               style: AppTextStyles.labelMedium.copyWith(
@@ -177,7 +184,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // ── Google Sign-in (placeholder) ───────────────────────
                   SecondaryButton(
                     label: 'Continue with Google',
-                    onPressed: () {},
+                    onPressed: () async {
+                      try {
+                        await ref.read(authControllerProvider.notifier).signInWithGoogle();
+                        if (mounted) context.go('/home');
+                      } catch (e) {
+                        if (mounted) {
+                          SnackBarUtils.showError(context, e.toString());
+                        }
+                      }
+                    },
                   ),
 
                   const SizedBox(height: AppConstants.spaceXL),

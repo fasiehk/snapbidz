@@ -10,6 +10,7 @@ import '../../core/widgets/app_text_field.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controllers/auth_controller.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 /// Screen 4 — Sign Up Screen
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -41,12 +42,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to the Terms of Service and Privacy Policy'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      SnackBarUtils.showError(context, 'Please agree to the Terms of Service and Privacy Policy');
       return;
     }
     
@@ -62,12 +58,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        SnackBarUtils.showError(context, e.toString());
       }
     }
   }

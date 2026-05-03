@@ -6,6 +6,9 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auth/controllers/auth_controller.dart';
+import '../../core/utils/snackbar_utils.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -73,20 +76,59 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: AppColors.secondary,
-          ),
-        );
+        SnackBarUtils.showSuccess(context, 'Profile updated successfully!');
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
-        );
+        SnackBarUtils.showError(context, e.toString());
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _sendVerification() async {
+    try {
+      await ref.read(authControllerProvider.notifier).sendEmailVerification();
+      if (mounted) {
+        SnackBarUtils.showInfo(context, 'Verification email sent! Please check your inbox.');
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarUtils.showError(context, e.toString());
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (image != null) {
+      setState(() => _isLoading = true);
+      try {
+        final bytes = await image.readAsBytes();
+        await ref.read(authControllerProvider.notifier).updateProfilePicture(
+          bytes: bytes,
+          fileName: image.name,
+        );
+        if (mounted) SnackBarUtils.showSuccess(context, 'Profile picture updated!');
+      } catch (e) {
+        if (mounted) SnackBarUtils.showError(context, e.toString());
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _deleteImage() async {
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).deleteProfilePicture();
+      if (mounted) SnackBarUtils.showSuccess(context, 'Profile picture removed!');
+    } catch (e) {
+      if (mounted) SnackBarUtils.showError(context, e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -111,36 +153,84 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryFixed,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(25),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryFixed,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final user = ref.watch(authControllerProvider).value;
+                            final picId = user?.prefs.data['profilePicId'] as String?;
+                            final imageUrl = ref.read(authControllerProvider.notifier).getProfilePictureUrl(picId);
+                            
+                            if (imageUrl != null) {
+                              return CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                errorWidget: (context, url, error) => const Icon(Icons.person_rounded, size: 50, color: AppColors.primary),
+                              );
+                            }
+                            return const Center(
+                              child: Icon(Icons.person_rounded, size: 50, color: AppColors.primary),
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.person_rounded, size: 50, color: AppColors.primary),
+                      ),
                     ),
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                       ),
-                      child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                     ),
+                  ),
+                  // Delete option if image exists
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final user = ref.watch(authControllerProvider).value;
+                      if (user?.prefs.data['profilePicId'] != null) {
+                        return Positioned(
+                          top: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _deleteImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.white),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
                   ),
                 ],
               ),
@@ -164,6 +254,49 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               icon: Icons.email_outlined,
               enabled: false, // Appwrite email update requires verification flow
             ),
+            const SizedBox(height: AppConstants.spaceSM),
+            
+            // Email Verification Status
+            Consumer(
+              builder: (context, ref, _) {
+                final user = ref.watch(authControllerProvider).value;
+                final isVerified = user?.emailVerification ?? false;
+                
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD, vertical: AppConstants.spaceSM),
+                  decoration: BoxDecoration(
+                    color: isVerified ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                    border: Border.all(
+                      color: (isVerified ? Colors.green : Colors.orange).withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isVerified ? Icons.verified_rounded : Icons.warning_amber_rounded,
+                        size: 18,
+                        color: isVerified ? Colors.green : Colors.orange,
+                      ),
+                      const SizedBox(width: AppConstants.spaceSM),
+                      Text(
+                        isVerified ? 'Email Verified' : 'Email Not Verified',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: isVerified ? Colors.green : Colors.orange,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (!isVerified)
+                        TextButton(
+                          onPressed: _sendVerification,
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          child: const Text('Verify Now'),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: AppConstants.spaceXL),
 
             // ── Security ──────────────────────────────────────────────────
@@ -171,9 +304,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Security', style: AppTextStyles.titleMedium),
-                TextButton(
-                  onPressed: () => setState(() => _showPasswordFields = !_showPasswordFields),
-                  child: Text(_showPasswordFields ? 'Cancel' : 'Change Password'),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () async {
+                        final email = _emailController.text.trim();
+                        if (email.isNotEmpty) {
+                          try {
+                            await ref.read(authControllerProvider.notifier).forgotPassword(email);
+                            if (mounted) SnackBarUtils.showInfo(context, 'Password reset email sent!');
+                          } catch (e) {
+                            if (mounted) SnackBarUtils.showError(context, e.toString());
+                          }
+                        }
+                      },
+                      child: const Text('Forgot Password?'),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _showPasswordFields = !_showPasswordFields),
+                      child: Text(_showPasswordFields ? 'Cancel' : 'Change Password'),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -24,16 +24,18 @@ void main() async {
   runApp(const ProviderScope(child: SnapBidApp()));
 }
 
-class SnapBidApp extends StatelessWidget {
+class SnapBidApp extends ConsumerWidget {
   const SnapBidApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goRouter = ref.watch(routerProvider);
+    
     return MaterialApp.router(
       title: 'SnapBid',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: appRouter,
+      routerConfig: goRouter,
     );
   }
 }

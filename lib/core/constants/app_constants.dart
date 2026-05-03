@@ -12,10 +12,11 @@ abstract class AppConstants {
   static const String bidsCollection = 'bids';
   static const String watchlistCollection = 'watchlist';
   static const String messagesCollection = 'messages';
+  static const String profilesCollection = 'profiles';
 
   // ─── Storage ──────────────────────────────────────────────────────────────
   static const String auctionImagesBucket = 'auction_images';
-  static const String profileAvatarsBucket = 'profile_avatars';
+  static const String profileAvatarsBucket = 'profile_pics';
 
   // ─── Spacing (8px grid) ───────────────────────────────────────────────────
   static const double spaceXS = 4.0;

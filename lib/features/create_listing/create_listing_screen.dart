@@ -14,6 +14,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 class CreateListingScreen extends ConsumerStatefulWidget {
   final String category;
@@ -124,15 +125,12 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
     setState(() => _selectedImages.removeAt(index));
   }
 
-  void _showSnackBar(String message, {Color? backgroundColor}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor ?? AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+  void _showSnackBar(String message, {bool isError = true}) {
+    if (isError) {
+      SnackBarUtils.showError(context, message);
+    } else {
+      SnackBarUtils.showSuccess(context, message);
+    }
   }
 
   Future<void> _publishListing() async {
@@ -157,6 +155,40 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
     try {
       final user = ref.read(authControllerProvider).value;
       if (user == null) throw Exception('Not logged in');
+
+      // ── Email Verification Check ─────────────────────────────────────
+      if (!user.emailVerification) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(children: [
+                Icon(Icons.mark_email_unread_rounded, color: AppColors.accent, size: 22),
+                SizedBox(width: 8),
+                Text('Email Not Verified'),
+              ]),
+              content: const Text('You must verify your email address before you can post a listing.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/profile/edit');
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  child: const Text('Go to Profile', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
 
       List<String> uploadedUrls = [];
       for (var img in _selectedImages) {
@@ -198,7 +230,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
       ref.invalidate(trendingAuctionsProvider);
 
       if (mounted) {
-        _showSnackBar('🎉 Listing published successfully!', backgroundColor: const Color(0xFF006C49));
+        SnackBarUtils.showSuccess(context, '🎉 Listing published successfully!');
         context.go('/home');
       }
     } catch (e) {

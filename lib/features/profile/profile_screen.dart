@@ -79,9 +79,103 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: AppConstants.spaceMD),
               Text(userName, style: AppTextStyles.headlineSmall),
               const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    user?.emailVerification == true ? Icons.verified_user_rounded : Icons.warning_amber_rounded,
+                    size: 14,
+                    color: user?.emailVerification == true ? AppColors.secondary : AppColors.error,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    user?.emailVerification == true ? 'Email Verified' : 'Email Not Verified',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: user?.emailVerification == true ? AppColors.secondary : AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               Text(memberSince, style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant)),
 
               const SizedBox(height: AppConstants.spaceLG),
+
+              // ── Email Verification Banner ──────────────────────────────────
+              if (user != null && !user.emailVerification) ...[
+                GlassCard(
+                  color: AppColors.error.withOpacity(0.05),
+                  padding: const EdgeInsets.all(AppConstants.spaceMD),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.mail_lock_rounded, color: AppColors.error),
+                          const SizedBox(width: AppConstants.spaceMD),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Verify your email', style: AppTextStyles.titleSmall),
+                                Text(
+                                  'You must verify your email to bid or post items.',
+                                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppConstants.spaceMD),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _showManualVerifyDialog(context, ref),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.error),
+                                foregroundColor: AppColors.error,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+                              ),
+                              child: const Text('Enter Code'),
+                            ),
+                          ),
+                          const SizedBox(width: AppConstants.spaceSM),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                try {
+                                  await ref.read(authControllerProvider.notifier).sendEmailVerification();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Verification email sent! Check your inbox.')),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+                              ),
+                              child: const Text('Send Email'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spaceLG),
+              ],
 
               // ── Stats ──────────────────────────────────────────────────────
               user == null
@@ -114,6 +208,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               hasListings: listedCount > 0,
                               onPostItem: () async {
                                 if (user == null) return;
+                                
+                                // Check email verification first
+                                if (!user.emailVerification) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please verify your email to post listings.'),
+                                      backgroundColor: AppColors.error,
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 final isComplete = await ref
                                     .read(sellerProfileProvider.notifier)
                                     .isProfileComplete(user.$id);

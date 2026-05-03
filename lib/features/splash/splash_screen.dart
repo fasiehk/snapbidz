@@ -106,146 +106,149 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _subtitleController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GradientBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Spacer(flex: 2),
 
-              // ── Logo Icon ─────────────────────────────────────────────────
-              AnimatedBuilder(
-                animation: _logoController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _logoOpacity.value,
-                    child: Transform.scale(
-                      scale: _logoScale.value,
-                      child: child,
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primaryDark, AppColors.primary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusXL),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.4),
-                        blurRadius: 30,
-                        offset: const Offset(0, 12),
+                // ── Logo Icon ─────────────────────────────────────────────────
+                AnimatedBuilder(
+                  animation: _logoController,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _logoOpacity.value,
+                      child: Transform.scale(
+                        scale: _logoScale.value,
+                        child: child,
                       ),
+                    );
+                  },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primaryDark, AppColors.primary],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.4),
+                          blurRadius: 30,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.gavel_rounded,
+                        color: AppColors.onPrimary,
+                        size: 50,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppConstants.spaceLG),
+
+                // ── App Name ──────────────────────────────────────────────────
+                AnimatedBuilder(
+                  animation: _textController,
+                  builder: (context, child) {
+                    return FadeTransition(
+                      opacity: _textOpacity,
+                      child: SlideTransition(
+                        position: _textSlide,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    AppConstants.appName,
+                    style: AppTextStyles.displayLarge.copyWith(
+                      foreground: Paint()
+                        ..shader = const LinearGradient(
+                          colors: [AppColors.primaryDark, AppColors.primary],
+                        ).createShader(
+                          const Rect.fromLTWH(0, 0, 200, 60),
+                        ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppConstants.spaceSM),
+
+                // ── Tagline ───────────────────────────────────────────────────
+                FadeTransition(
+                  opacity: _subtitleOpacity,
+                  child: Text(
+                    AppConstants.appTagline,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppConstants.spaceSM),
+
+                // ── Sub tagline ───────────────────────────────────────────────
+                FadeTransition(
+                  opacity: _subtitleOpacity,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spaceMD,
+                      vertical: AppConstants.spaceXS + 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Text(
+                      AppConstants.appSubtitle,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const Spacer(flex: 2),
+
+                // ── Loading indicator ─────────────────────────────────────────
+                FadeTransition(
+                  opacity: _subtitleOpacity,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        child: LinearProgressIndicator(
+                          backgroundColor: AppColors.primaryFixed,
+                          valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                          borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                        ),
+                      ),
+                      const SizedBox(height: AppConstants.spaceMD),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.gavel_rounded,
-                      color: AppColors.onPrimary,
-                      size: 50,
-                    ),
-                  ),
                 ),
-              ),
 
-              const SizedBox(height: AppConstants.spaceLG),
-
-              // ── App Name ──────────────────────────────────────────────────
-              AnimatedBuilder(
-                animation: _textController,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _textOpacity,
-                    child: SlideTransition(
-                      position: _textSlide,
-                      child: child,
-                    ),
-                  );
-                },
-                child: Text(
-                  AppConstants.appName,
-                  style: AppTextStyles.displayLarge.copyWith(
-                    foreground: Paint()
-                      ..shader = const LinearGradient(
-                        colors: [AppColors.primaryDark, AppColors.primary],
-                      ).createShader(
-                        const Rect.fromLTWH(0, 0, 200, 60),
-                      ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceSM),
-
-              // ── Tagline ───────────────────────────────────────────────────
-              FadeTransition(
-                opacity: _subtitleOpacity,
-                child: Text(
-                  AppConstants.appTagline,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceSM),
-
-              // ── Sub tagline ───────────────────────────────────────────────
-              FadeTransition(
-                opacity: _subtitleOpacity,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.spaceMD,
-                    vertical: AppConstants.spaceXS + 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Text(
-                    AppConstants.appSubtitle,
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-
-              const Spacer(flex: 2),
-
-              // ── Loading indicator ─────────────────────────────────────────
-              FadeTransition(
-                opacity: _subtitleOpacity,
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 40,
-                      child: LinearProgressIndicator(
-                        backgroundColor: AppColors.primaryFixed,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-                        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spaceMD),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceLG),
-            ],
+                const SizedBox(height: AppConstants.spaceLG),
+              ],
+            ),
           ),
         ),
       ),
