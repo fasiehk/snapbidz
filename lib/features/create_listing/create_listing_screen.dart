@@ -19,12 +19,14 @@ class CreateListingScreen extends ConsumerStatefulWidget {
   final String category;
   final String? subCategory;
   final String? model;
+  final Map<String, String>? propertyDetails;
 
   const CreateListingScreen({
     super.key,
     required this.category,
     this.subCategory,
     this.model,
+    this.propertyDetails,
   });
 
   @override
@@ -163,6 +165,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
         uploadedUrls.add(url);
       }
 
+      String finalDescription = _descriptionController.text.isNotEmpty ? _descriptionController.text : 'No description provided.';
+      
+      if (widget.propertyDetails != null) {
+        final specs = widget.propertyDetails!.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+        finalDescription = 'SPECIFICATIONS:\n$specs\n\nDETAILS:\n$finalDescription';
+      }
+
       final auction = AuctionModel(
         id: '',
         createdAt: DateTime.now(),
@@ -170,7 +179,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
         subtitle: widget.subCategory ?? widget.category,
         category: widget.category,
         subCategory: widget.subCategory,
-        description: _descriptionController.text.isNotEmpty ? _descriptionController.text : 'No description provided.',
+        description: finalDescription,
         imageEmoji: '📦',
         imageUrl: uploadedUrls.isNotEmpty ? uploadedUrls.first : null,
         imageUrls: uploadedUrls,
@@ -304,6 +313,54 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
                         ),
                       ),
                       const SizedBox(height: 24),
+
+                      if (widget.propertyDetails != null) ...[
+                        _AnimatedSection(
+                          index: 2,
+                          controller: _staggerController,
+                          child: GlassCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(Icons.inventory_2_outlined, 'Property Specifications'),
+                                const SizedBox(height: 16),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: widget.propertyDetails!.entries.map((e) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withValues(alpha: 0.05),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '${e.key}: ',
+                                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurfaceVariant),
+                                          ),
+                                          Text(
+                                            e.value,
+                                            style: AppTextStyles.labelSmall.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
 
                       // Basics Section
                       _AnimatedSection(

@@ -11,10 +11,14 @@ import '../features/messages/messages_screen.dart';
 import '../features/messages/chat_window_screen.dart';
 import '../features/bids/my_bids_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
 import '../features/create_listing/create_listing_screen.dart';
 import '../features/create_listing/select_category_screen.dart';
 import '../features/create_listing/select_subcategory_screen.dart';
 import '../features/create_listing/select_model_screen.dart';
+import '../features/create_listing/property_details_screen.dart';
+import '../features/create_listing/vehicle_details_screen.dart';
+import '../features/create_listing/tech_details_screen.dart';
 import '../core/data/category_data.dart';
 import '../features/create_listing/edit_listing_screen.dart';
 import '../features/main/main_shell.dart';
@@ -63,6 +67,10 @@ final GoRouter appRouter = GoRouter(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
         ),
+        GoRoute(
+          path: '/edit-profile',
+          builder: (context, state) => const EditProfileScreen(),
+        ),
       ],
     ),
     GoRoute(
@@ -83,6 +91,7 @@ final GoRouter appRouter = GoRouter(
           otherUserId: extra['otherUserId'] as String? ?? '',
           otherUserName: extra['otherUserName'] as String? ?? 'User',
           currentBid: extra['currentBid'] as String? ?? '',
+          auctionImage: extra['auctionImage'] as String?,
         );
       },
     ),
@@ -112,6 +121,38 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/create/property-details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return PropertyDetailsScreen(
+          category: extra['category'] as String,
+          subCategory: extra['subCategory'] as String,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/create/vehicle-details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return VehicleDetailsScreen(
+          category: extra['category'] as String,
+          subCategory: extra['subCategory'] as String,
+          model: extra['model'] as String?,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/create/tech-details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return TechDetailsScreen(
+          category: extra['category'] as String,
+          subCategory: extra['subCategory'] as String,
+          model: extra['model'] as String?,
+        );
+      },
+    ),
+    GoRoute(
       path: '/create/details',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>? ?? {};
@@ -119,6 +160,7 @@ final GoRouter appRouter = GoRouter(
           category: extra['category'] as String? ?? 'Other',
           subCategory: extra['subCategory'] as String?,
           model: extra['model'] as String?,
+          propertyDetails: extra['propertyDetails'] as Map<String, String>?,
         );
       },
     ),

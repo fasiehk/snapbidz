@@ -6,14 +6,17 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/models/auction_model.dart';
+import 'controllers/watchlist_controller.dart';
+import 'repositories/watchlist_repository.dart';
+import '../auth/controllers/auth_controller.dart';
 
 class WatchlistScreen extends ConsumerWidget {
   const WatchlistScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watchlist backend not implemented yet, so we show an empty state.
-    final List<AuctionModel> watchlist = [];
+    final watchlistAsync = ref.watch(watchlistProvider);
+    final user = ref.watch(authControllerProvider).value;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -30,7 +33,7 @@ class WatchlistScreen extends ConsumerWidget {
                   Text('Your Watchlist', style: AppTextStyles.headlineMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Tracking ${watchlist.length} high-value auctions',
+                    'Tracking ${watchlistAsync.value?.length ?? 0} high-value auctions',
                     style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
                   ),
                 ],
@@ -41,28 +44,40 @@ class WatchlistScreen extends ConsumerWidget {
 
             // ── List ─────────────────────────────────────────────────────────
             Expanded(
-              child: watchlist.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.favorite_border_rounded, size: 64, color: AppColors.outline),
-                          const SizedBox(height: 16),
-                          Text('Your watchlist is empty', style: AppTextStyles.titleMedium),
-                          const SizedBox(height: 8),
-                          Text('Items you watch will appear here.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
-                        ],
+              child: watchlistAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                error: (err, _) => Center(child: Text('Failed to load watchlist: $err')),
+                data: (watchlist) => watchlist.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.favorite_border_rounded, size: 64, color: AppColors.outline),
+                            const SizedBox(height: 16),
+                            Text('Your watchlist is empty', style: AppTextStyles.titleMedium),
+                            const SizedBox(height: 8),
+                            Text('Items you watch will appear here.', 
+                                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async => ref.invalidate(watchlistProvider),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
+                          itemCount: watchlist.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, i) {
+                            final item = watchlist[i];
+                            return _WatchlistCard(
+                              auction: item, 
+                              onTap: () => context.push('/auction/${item.id}'),
+                              onRemoved: () => ref.invalidate(watchlistProvider),
+                            );
+                          },
+                        ),
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                      itemCount: watchlist.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, i) {
-                        final item = watchlist[i];
-                        return _WatchlistCard(auction: item, onTap: () => context.push('/auction/${item.id}'));
-                      },
-                    ),
+              ),
             ),
           ],
         ),
@@ -71,16 +86,17 @@ class WatchlistScreen extends ConsumerWidget {
   }
 }
 
-class _WatchlistCard extends StatefulWidget {
+class _WatchlistCard extends ConsumerStatefulWidget {
   final AuctionModel auction;
   final VoidCallback onTap;
-  const _WatchlistCard({required this.auction, required this.onTap});
+  final VoidCallback onRemoved;
+  const _WatchlistCard({required this.auction, required this.onTap, required this.onRemoved});
 
   @override
-  State<_WatchlistCard> createState() => _WatchlistCardState();
+  ConsumerState<_WatchlistCard> createState() => _WatchlistCardState();
 }
 
-class _WatchlistCardState extends State<_WatchlistCard> {
+class _WatchlistCardState extends ConsumerState<_WatchlistCard> {
   bool _watching = true;
 
   Color get _timerColor {
@@ -148,7 +164,30 @@ class _WatchlistCardState extends State<_WatchlistCard> {
                 ),
               ),
               IconButton(
-                onPressed: () => setState(() => _watching = !_watching),
+                onPressed: () async {
+                  final user = ref.read(authControllerProvider).value;
+                  if (user == null) return;
+                  
+                  try {
+                    await ref.read(watchlistRepositoryProvider).toggleWatchlist(
+                      userId: user.$id,
+                      auctionId: widget.auction.id,
+                      isCurrentlyWatching: _watching,
+                    );
+                    if (mounted) {
+                      setState(() => _watching = !_watching);
+                      if (!_watching) {
+                        widget.onRemoved();
+                      }
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    }
+                  }
+                },
                 icon: Icon(
                   _watching ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
                   color: _watching ? AppColors.accent : AppColors.outline,

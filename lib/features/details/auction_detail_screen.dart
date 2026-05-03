@@ -13,6 +13,8 @@ import '../auth/controllers/auth_controller.dart';
 import '../bids/repositories/bid_repository.dart';
 import '../bids/models/bid_model.dart';
 import '../seller_verification/controllers/seller_verification_controller.dart';
+import '../watchlist/controllers/watchlist_controller.dart';
+import '../watchlist/repositories/watchlist_repository.dart';
 
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   final String auctionId;
@@ -24,6 +26,7 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _isWatched = false;
+  bool _isLoadingWatchStatus = true;
   int _currentImageIndex = 0;
   late TextEditingController _bidController;
 
@@ -31,6 +34,27 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   void initState() {
     super.initState();
     _bidController = TextEditingController();
+    _checkWatchStatus();
+  }
+
+  Future<void> _checkWatchStatus() async {
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) {
+      if (mounted) setState(() => _isLoadingWatchStatus = false);
+      return;
+    }
+    
+    try {
+      final status = await ref.read(watchlistRepositoryProvider).isWatching(user.$id, widget.auctionId);
+      if (mounted) {
+        setState(() {
+          _isWatched = status;
+          _isLoadingWatchStatus = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingWatchStatus = false);
+    }
   }
 
   @override
@@ -58,6 +82,60 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     return 'Just now';
   }
 
+  Map<String, String>? _parseSpecs(String description) {
+    final hasNewSpec = description.contains('SPECIFICATIONS:');
+    final hasOldSpec = description.contains('PROPERTY SPECIFICATIONS:');
+    if (!hasNewSpec && !hasOldSpec) return null;
+
+    final header = hasNewSpec ? 'SPECIFICATIONS:' : 'PROPERTY SPECIFICATIONS:';
+
+    final Map<String, String> specs = {};
+    try {
+      final lines = description.split('\n');
+      bool inSpecs = false;
+      for (var line in lines) {
+        if (line.contains(header)) {
+          inSpecs = true;
+          continue;
+        }
+        if (inSpecs && line.contains(':')) {
+          final parts = line.split(':');
+          if (parts.length >= 2) {
+            specs[parts[0].trim()] = parts[1].trim();
+          }
+        }
+        if (inSpecs && line.trim().isEmpty && specs.isNotEmpty) {
+          break; // End of spec block
+        }
+      }
+    } catch (e) {
+      debugPrint('Error parsing specs: $e');
+    }
+    return specs.isEmpty ? null : specs;
+  }
+
+  String _cleanDescription(String description) {
+    final hasNewSpec = description.contains('SPECIFICATIONS:');
+    final hasOldSpec = description.contains('PROPERTY SPECIFICATIONS:');
+    if (!hasNewSpec && !hasOldSpec) return description;
+    
+    final parts = description.split('DETAILS:');
+    if (parts.length >= 2) {
+      return parts[1].trim();
+    }
+    
+    // Fallback if DETAILS: tag is missing
+    final lines = description.split('\n');
+    return lines.where((l) => 
+      !l.contains('PROPERTY SPECIFICATIONS:') && 
+      !l.contains('Area:') && 
+      !l.contains('Bedrooms:') && 
+      !l.contains('Bathrooms:') && 
+      !l.contains('Furnished:') && 
+      !l.contains('Status:')
+    ).join('\n').trim();
+  }
+
   void _messageSeller(AuctionModel auction) {
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
@@ -80,6 +158,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
         'otherUserId': auction.sellerId,
         'otherUserName': auction.sellerName,
         'currentBid': 'PKR ${auction.currentBid}',
+        'auctionImage': auction.imageUrl ?? (auction.imageUrls.isNotEmpty ? auction.imageUrls.first : null),
       },
     );
   }
@@ -259,7 +338,34 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                 ),
                 actions: [
                   GestureDetector(
-                    onTap: () => setState(() => _isWatched = !_isWatched),
+                    onTap: () async {
+                      final user = ref.read(authControllerProvider).value;
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please login to watch auctions.')),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final newStatus = await ref.read(watchlistRepositoryProvider).toggleWatchlist(
+                          userId: user.$id,
+                          auctionId: auction.id,
+                          isCurrentlyWatching: _isWatched,
+                        );
+                        if (mounted) {
+                          setState(() => _isWatched = newStatus);
+                          ref.invalidate(watchlistProvider);
+                          ref.invalidate(isWatchingProvider(auction.id));
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error updating watchlist: $e')),
+                          );
+                        }
+                      }
+                    },
                     child: Container(
                       margin: const EdgeInsets.all(8),
                       padding: const EdgeInsets.all(8),
@@ -267,11 +373,13 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                         color: Colors.white.withAlpha(220),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        _isWatched ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                        color: _isWatched ? AppColors.accent : AppColors.onSurface,
-                        size: 22,
-                      ),
+                      child: _isLoadingWatchStatus 
+                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(
+                            _isWatched ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                            color: _isWatched ? AppColors.accent : AppColors.onSurface,
+                            size: 22,
+                          ),
                     ),
                   ),
                 ],
@@ -436,12 +544,28 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                       // Description
                       Text('Description', style: AppTextStyles.titleMedium),
                       const SizedBox(height: AppConstants.spaceSM),
-                      GlassCard(
-                        padding: const EdgeInsets.all(AppConstants.spaceMD),
-                        child: Text(
-                          auction.description,
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant, height: 1.7),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final specs = _parseSpecs(auction.description);
+                          final cleanDesc = _cleanDescription(auction.description);
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (specs != null) ...[
+                                _buildSpecs(specs),
+                                const SizedBox(height: 16),
+                              ],
+                              GlassCard(
+                                padding: const EdgeInsets.all(AppConstants.spaceMD),
+                                child: Text(
+                                  cleanDesc,
+                                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant, height: 1.7),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: AppConstants.spaceLG),
@@ -479,6 +603,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                                             'otherUserId': bid.bidderId,
                                             'otherUserName': bid.bidderName,
                                             'currentBid': 'PKR ${auction.currentBid}',
+                                            'auctionImage': auction.imageUrl ?? (auction.imageUrls.isNotEmpty ? auction.imageUrls.first : null),
                                           },
                                         );
                                       } : null,
@@ -632,6 +757,77 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           );
         }),
       ) : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildSpecs(Map<String, String> specs) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Specifications',
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 24,
+            runSpacing: 16,
+            children: specs.entries.map((e) {
+              IconData icon = Icons.info_outline_rounded;
+              final key = e.key.toLowerCase();
+              
+              if (key.contains('area')) icon = Icons.square_foot_rounded;
+              else if (key.contains('bed')) icon = Icons.bed_rounded;
+              else if (key.contains('bath')) icon = Icons.bathtub_rounded;
+              else if (key.contains('furnish')) icon = Icons.weekend_rounded;
+              else if (key.contains('status')) icon = Icons.construction_rounded;
+              else if (key.contains('year') || key.contains('model')) icon = Icons.calendar_today_rounded;
+              else if (key.contains('mileage') || key.contains('km')) icon = Icons.speed_rounded;
+              else if (key.contains('brand') || key.contains('make')) icon = Icons.branding_watermark_outlined;
+              else if (key.contains('color')) icon = Icons.palette_outlined;
+              else if (key.contains('condition')) icon = Icons.star_outline_rounded;
+              
+              return _SpecIconItem(icon: icon, label: e.key, value: e.value);
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecIconItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SpecIconItem({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 26),
+          child: Text(
+            value,
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
+      ],
     );
   }
 }

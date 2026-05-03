@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -14,6 +15,7 @@ class ChatWindowScreen extends ConsumerStatefulWidget {
   final String otherUserId;
   final String otherUserName;
   final String currentBid;
+  final String? auctionImage;
 
   const ChatWindowScreen({
     super.key,
@@ -22,6 +24,7 @@ class ChatWindowScreen extends ConsumerStatefulWidget {
     required this.otherUserId,
     required this.otherUserName,
     this.currentBid = '',
+    this.auctionImage,
   });
 
   @override
@@ -77,6 +80,7 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
             receiverId: widget.otherUserId,
             receiverName: widget.otherUserName,
             text: text,
+            auctionImage: widget.auctionImage,
           );
       _scrollToBottom();
     } catch (e) {
@@ -117,6 +121,7 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
             auctionTitle: widget.auctionTitle,
             currentBid: widget.currentBid,
             auctionId: widget.auctionId,
+            auctionImage: widget.auctionImage,
           ),
 
           // Messages
@@ -284,32 +289,53 @@ class _AuctionContextBanner extends StatelessWidget {
   final String auctionTitle;
   final String currentBid;
   final String auctionId;
-  const _AuctionContextBanner(
-      {required this.auctionTitle,
-      required this.currentBid,
-      required this.auctionId});
+  final String? auctionImage;
+
+  const _AuctionContextBanner({
+    required this.auctionTitle,
+    required this.currentBid,
+    required this.auctionId,
+    this.auctionImage,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primaryFixed.withAlpha(120),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primaryFixed),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primaryFixed,
-              borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: () => context.push('/auction/$auctionId'),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(200),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outlineVariant.withAlpha(80)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: const Center(child: Text('📦', style: TextStyle(fontSize: 18))),
-          ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primaryFixed,
+                borderRadius: BorderRadius.circular(8),
+                image: auctionImage != null
+                    ? DecorationImage(
+                        image: NetworkImage(auctionImage!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: auctionImage == null
+                  ? const Center(child: Text('📦', style: TextStyle(fontSize: 22)))
+                  : null,
+            ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -333,8 +359,9 @@ class _AuctionContextBanner extends StatelessWidget {
           const Icon(Icons.chevron_right_rounded, color: AppColors.outline, size: 18),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ── Chat Bubble ───────────────────────────────────────────────────────────────

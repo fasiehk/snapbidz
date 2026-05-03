@@ -178,10 +178,12 @@ class _ConversationsListViewState
           final sentAt = thread['createdAt'] != null
               ? DateTime.tryParse(thread['createdAt'] as String)
               : null;
+          final auctionImage = thread['auctionImage'] as String?;
 
           return _ConversationTile(
             otherUserName: otherUserName,
             auctionTitle: auctionTitle,
+            auctionImage: auctionImage,
             lastMessage: isMe ? 'You: $lastText' : lastText,
             time: sentAt != null ? _formatTime(sentAt) : '',
             unread: (!isRead && !isMe) ? 1 : 0,
@@ -191,6 +193,7 @@ class _ConversationsListViewState
                 'auctionTitle': auctionTitle,
                 'otherUserId': otherUserId,
                 'otherUserName': otherUserName,
+                'auctionImage': auctionImage,
               },
             ),
           );
@@ -217,6 +220,7 @@ class _ConversationsListViewState
 class _ConversationTile extends StatelessWidget {
   final String otherUserName;
   final String auctionTitle;
+  final String? auctionImage;
   final String lastMessage;
   final String time;
   final int unread;
@@ -225,6 +229,7 @@ class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
     required this.otherUserName,
     required this.auctionTitle,
+    this.auctionImage,
     required this.lastMessage,
     required this.time,
     required this.unread,
@@ -314,12 +319,38 @@ class _ConversationTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '📦 $auctionTitle',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                    ),
+                  Row(
+                    children: [
+                      if (auctionImage != null)
+                        Container(
+                          width: 16,
+                          height: 16,
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            image: DecorationImage(
+                              image: NetworkImage(auctionImage!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      else
+                        const Padding(
+                          padding: EdgeInsets.only(right: 6),
+                          child: Text('📦', style: TextStyle(fontSize: 10)),
+                        ),
+                      Expanded(
+                        child: Text(
+                          auctionTitle,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(

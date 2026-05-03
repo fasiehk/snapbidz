@@ -67,4 +67,40 @@ class AuthController extends StateNotifier<AsyncValue<models.User?>> {
       state = AsyncValue.error(e, st);
     }
   }
+
+  /// Update display name
+  Future<void> updateDisplayName(String name) async {
+    try {
+      state = const AsyncValue.loading();
+      final user = await _authRepository.updateName(name);
+      state = AsyncValue.data(user);
+    } on AppwriteException catch (e, st) {
+      state = AsyncValue.error(e.message ?? 'Update failed', st);
+      rethrow;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Update password
+  Future<void> updatePassword({
+    required String newPassword,
+    required String oldPassword,
+  }) async {
+    try {
+      state = const AsyncValue.loading();
+      final user = await _authRepository.updatePassword(
+        newPassword: newPassword,
+        oldPassword: oldPassword,
+      );
+      state = AsyncValue.data(user);
+    } on AppwriteException catch (e, st) {
+      state = AsyncValue.error(e.message ?? 'Password update failed', st);
+      rethrow;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
 }

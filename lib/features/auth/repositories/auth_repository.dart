@@ -65,4 +65,20 @@ class AuthRepository {
       // Ignore errors if session is already gone
     }
   }
+
+  /// Update user display name
+  Future<models.User> updateName(String name) async {
+    return await _account.updateName(name: name);
+  }
+
+  /// Update user password
+  Future<models.User> updatePassword({
+    required String newPassword,
+    required String oldPassword,
+  }) async {
+    return await _account.updatePassword(
+      password: newPassword,
+      oldPassword: oldPassword,
+    );
+  }
 }

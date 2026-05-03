@@ -28,6 +28,7 @@ class ChatRepository {
     required String receiverId,
     required String receiverName,
     required String text,
+    String? auctionImage,
   }) async {
     final now = DateTime.now().toUtc().toIso8601String();
     final doc = await _db.createDocument(
@@ -37,6 +38,7 @@ class ChatRepository {
       data: {
         'auctionId': auctionId,
         'auctionTitle': auctionTitle,
+        'auctionImage': auctionImage,
         'senderId': senderId,
         'senderName': senderName,
         'receiverId': receiverId,

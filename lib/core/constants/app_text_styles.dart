@@ -59,6 +59,7 @@ abstract class AppTextStyles {
     height: 1.4,
     color: AppColors.onSurface,
   );
+  
 
   static TextStyle titleSmall = GoogleFonts.manrope(
     fontSize: 14,

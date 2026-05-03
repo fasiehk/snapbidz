@@ -5,6 +5,8 @@ class ChatMessageModel {
   final String senderName;
   final String receiverId;
   final String text;
+  final String auctionTitle;
+  final String? auctionImage;
   final bool isRead;
   final DateTime createdAt;
 
@@ -15,6 +17,8 @@ class ChatMessageModel {
     required this.senderName,
     required this.receiverId,
     required this.text,
+    required this.auctionTitle,
+    this.auctionImage,
     required this.isRead,
     required this.createdAt,
   });
@@ -27,6 +31,8 @@ class ChatMessageModel {
       senderName: map['senderName'] ?? '',
       receiverId: map['receiverId'] ?? '',
       text: map['text'] ?? '',
+      auctionTitle: map['auctionTitle'] ?? 'Auction',
+      auctionImage: map['auctionImage'],
       isRead: map['isRead'] ?? false,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt']) ?? DateTime.now()
@@ -43,6 +49,8 @@ class ChatMessageModel {
       'senderName': senderName,
       'receiverId': receiverId,
       'text': text,
+      'auctionTitle': auctionTitle,
+      'auctionImage': auctionImage,
       'isRead': isRead,
       'createdAt': createdAt.toIso8601String(),
     };

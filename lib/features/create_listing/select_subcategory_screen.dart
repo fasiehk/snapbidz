@@ -245,10 +245,28 @@ class _AnimatedSubCategoryTile extends StatelessWidget {
             padding: EdgeInsets.zero,
             borderRadius: 16,
             onTap: () {
-              if (subCategory.models != null && subCategory.models!.isNotEmpty) {
+              final cat = categoryName.toLowerCase();
+              if (cat.contains('property')) {
+                context.push('/create/property-details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategory.name,
+                });
+              } else if (subCategory.models != null && subCategory.models!.isNotEmpty) {
                 context.push('/create/model', extra: {
                   'category': categoryName,
                   'subCategory': subCategory,
+                });
+              } else if (cat.contains('vehicle')) {
+                context.push('/create/vehicle-details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategory.name,
+                  'model': null,
+                });
+              } else if (cat.contains('mobile') || cat.contains('electronic') || cat.contains('computer')) {
+                context.push('/create/tech-details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategory.name,
+                  'model': null,
                 });
               } else {
                 context.push('/create/details', extra: {

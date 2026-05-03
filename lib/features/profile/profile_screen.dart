@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -9,15 +10,28 @@ import '../auth/controllers/auth_controller.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../seller_verification/controllers/seller_verification_controller.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
     final userName = user?.name ?? 'Alexandra Vance';
     final userInitials = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'A';
+    
+    String memberSince = 'Member since 2021';
+    if (user != null && user.registration.isNotEmpty) {
+      try {
+        final date = DateTime.parse(user.registration);
+        memberSince = 'Member since ${DateFormat.yMMMM().format(date)}';
+      } catch (_) {}
+    }
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -65,7 +79,7 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: AppConstants.spaceMD),
               Text(userName, style: AppTextStyles.headlineSmall),
               const SizedBox(height: 4),
-              Text('Premium Collector • Member since 2021', style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant)),
+              Text(memberSince, style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant)),
 
               const SizedBox(height: AppConstants.spaceLG),
 
@@ -78,63 +92,45 @@ class ProfileScreen extends ConsumerWidget {
                         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                       ),
                       error: (err, _) => const SizedBox(),
-                      data: (stats) => GlassCard(
-                        padding: const EdgeInsets.all(AppConstants.spaceMD),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      data: (stats) {
+                        final listedCount = int.tryParse(stats['listed']!) ?? 0;
+                        return Column(
                           children: [
-                            _ProfileStat(value: stats['bids']!, label: 'Active Bids'),
-                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                            _ProfileStat(value: stats['listed']!, label: 'Listed'),
-                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                            _ProfileStat(value: stats['rating']!, label: 'Rating'),
-                            Container(width: 1, height: 36, color: AppColors.outlineVariant),
-                            _ProfileStat(value: stats['volume']!, label: 'Volume'),
+                            GlassCard(
+                              padding: const EdgeInsets.all(AppConstants.spaceMD),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _ProfileStat(value: stats['bids']!, label: 'Active Bids'),
+                                  Container(width: 1, height: 36, color: AppColors.outlineVariant),
+                                  _ProfileStat(value: stats['listed']!, label: 'Listed'),
+                                  Container(width: 1, height: 36, color: AppColors.outlineVariant),
+                                  _ProfileStat(value: stats['volume']!, label: 'Volume'),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppConstants.spaceLG),
+                            _SellerCtaCard(
+                              hasListings: listedCount > 0,
+                              onPostItem: () async {
+                                if (user == null) return;
+                                final isComplete = await ref
+                                    .read(sellerProfileProvider.notifier)
+                                    .isProfileComplete(user.$id);
+                                if (!context.mounted) return;
+                                if (isComplete) {
+                                  context.push('/create');
+                                } else {
+                                  context.push('/seller-verify');
+                                }
+                              },
+                            ),
                           ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
 
-              const SizedBox(height: AppConstants.spaceLG),
-
-              // ── Post an Item CTA ───────────────────────────────────────────
-              _SellerCtaCard(
-                onPostItem: () async {
-                  if (user == null) return;
-                  final isComplete = await ref
-                      .read(sellerProfileProvider.notifier)
-                      .isProfileComplete(user.$id);
-                  if (!context.mounted) return;
-                  if (isComplete) {
-                    context.push('/create');
-                  } else {
-                    context.push('/seller-verify');
-                  }
-                },
-              ),
-
-              const SizedBox(height: AppConstants.spaceLG),
-
-              // ── Seller Reputation ──────────────────────────────────────────
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Seller Reputation', style: AppTextStyles.titleMedium),
-              ),
-              const SizedBox(height: AppConstants.spaceSM),
-              GlassCard(
-                padding: const EdgeInsets.all(AppConstants.spaceMD),
-                child: Column(
-                  children: [
-                    _ReputationBar(label: 'Communication', percent: 0.98),
-                    const SizedBox(height: AppConstants.spaceSM),
-                    _ReputationBar(label: 'Item Accuracy', percent: 0.96),
-                    const SizedBox(height: AppConstants.spaceSM),
-                    _ReputationBar(label: 'Shipping Speed', percent: 0.94),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceLG),
+              const SizedBox(height: AppConstants.spaceMD),
 
               // ── Account Settings ───────────────────────────────────────────
               Align(
@@ -146,7 +142,11 @@ class ProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    _SettingsTile(icon: Icons.person_outline_rounded, label: 'Edit Profile', onTap: () {}),
+                    _SettingsTile(
+                      icon: Icons.person_outline_rounded, 
+                      label: 'Edit Profile', 
+                      onTap: () => context.push('/edit-profile'),
+                    ),
                     _SettingsDivider(),
                     _SettingsTile(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
                     _SettingsDivider(),
@@ -182,28 +182,41 @@ class ProfileScreen extends ConsumerWidget {
 
 class _SellerCtaCard extends StatelessWidget {
   final VoidCallback onPostItem;
-  const _SellerCtaCard({required this.onPostItem});
+  final bool hasListings;
+  const _SellerCtaCard({required this.onPostItem, this.hasListings = false});
 
   @override
   Widget build(BuildContext context) {
+    final title = hasListings ? 'Create a New Listing' : 'Start Selling Today';
+    final subtitle = hasListings 
+        ? 'Ready to post another item for auction?' 
+        : 'List your items & let the bidding begin';
+    final gradient = hasListings 
+        ? const LinearGradient(
+            colors: [AppColors.primary, AppColors.primaryDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: gradient,
         borderRadius: BorderRadius.circular(AppConstants.radiusLG),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A00E0).withAlpha(80),
+            color: (hasListings ? AppColors.primary : const Color(0xFF4A00E0)).withAlpha(80),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spaceLG),
+        padding: EdgeInsets.all(hasListings ? AppConstants.spaceMD : AppConstants.spaceLG),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -211,13 +224,17 @@ class _SellerCtaCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: hasListings ? 36 : 44,
+                  height: hasListings ? 36 : 44,
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(30),
                     borderRadius: BorderRadius.circular(AppConstants.radiusMD),
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 24),
+                  child: Icon(
+                    hasListings ? Icons.add_rounded : Icons.storefront_rounded, 
+                    color: Colors.white, 
+                    size: hasListings ? 20 : 24
+                  ),
                 ),
                 const SizedBox(width: AppConstants.spaceMD),
                 Expanded(
@@ -225,11 +242,12 @@ class _SellerCtaCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Start Selling Today',
-                        style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+                        title,
+                        style: (hasListings ? AppTextStyles.titleSmall : AppTextStyles.titleMedium)
+                            .copyWith(color: Colors.white),
                       ),
                       Text(
-                        'List your items & let the bidding begin',
+                        subtitle,
                         style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withAlpha(200)),
                       ),
                     ],
@@ -238,18 +256,19 @@ class _SellerCtaCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: AppConstants.spaceMD),
-
-            // ── Feature pills ─────────────────────────────────────────────
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _FeaturePill(icon: Icons.visibility_rounded, label: 'Visible to all users'),
-                _FeaturePill(icon: Icons.gavel_rounded, label: 'Live bidding'),
-                _FeaturePill(icon: Icons.timer_outlined, label: 'Custom duration'),
-              ],
-            ),
+            if (!hasListings) ...[
+              const SizedBox(height: AppConstants.spaceMD),
+              // ── Feature pills ─────────────────────────────────────────────
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _FeaturePill(icon: Icons.visibility_rounded, label: 'Visible to all users'),
+                  _FeaturePill(icon: Icons.gavel_rounded, label: 'Live bidding'),
+                  _FeaturePill(icon: Icons.timer_outlined, label: 'Custom duration'),
+                ],
+              ),
+            ],
 
             const SizedBox(height: AppConstants.spaceLG),
 
@@ -316,34 +335,6 @@ class _ProfileStat extends StatelessWidget {
       children: [
         Text(value, style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
         Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-      ],
-    );
-  }
-}
-
-class _ReputationBar extends StatelessWidget {
-  final String label;
-  final double percent;
-  const _ReputationBar({required this.label, required this.percent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(width: 120, child: Text(label, style: AppTextStyles.bodySmall)),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-            child: LinearProgressIndicator(
-              value: percent,
-              backgroundColor: AppColors.primaryFixed,
-              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-              minHeight: 8,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text('${(percent * 100).toInt()}%', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
       ],
     );
   }

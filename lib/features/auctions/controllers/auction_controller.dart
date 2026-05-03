@@ -256,6 +256,5 @@ final profileStatsProvider = FutureProvider.family<Map<String, String>, String>(
     'listed': listedCount.toString(),
     'bids': bidsCount.toString(),
     'volume': formattedVolume,
-    'rating': '4.9★',
   };
 });

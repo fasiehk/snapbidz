@@ -253,11 +253,26 @@ class _AnimatedModelTile extends StatelessWidget {
             padding: EdgeInsets.zero,
             borderRadius: 16,
             onTap: () {
-              context.push('/create/details', extra: {
-                'category': categoryName,
-                'subCategory': subCategoryName,
-                'model': model,
-              });
+              final cat = categoryName.toLowerCase();
+              if (cat.contains('vehicle')) {
+                context.push('/create/vehicle-details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategoryName,
+                  'model': model,
+                });
+              } else if (cat.contains('mobile') || cat.contains('electronic') || cat.contains('computer')) {
+                context.push('/create/tech-details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategoryName,
+                  'model': model,
+                });
+              } else {
+                context.push('/create/details', extra: {
+                  'category': categoryName,
+                  'subCategory': subCategoryName,
+                  'model': model,
+                });
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
