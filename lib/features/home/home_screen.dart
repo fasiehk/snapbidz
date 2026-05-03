@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/data/dummy_data.dart';
+import '../../core/data/category_data.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
@@ -127,14 +127,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                      itemCount: AppDummyData.categories.length,
+                      itemCount: CategoryData.categories.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (context, i) {
-                        final cat = AppDummyData.categories[i];
+                        final cat = CategoryData.categories[i];
                         final isActive = i == 0;
                         return _CategoryChip(
-                          label: cat['label']!,
-                          emoji: cat['emoji']!,
+                          label: cat.name,
+                          icon: cat.icon,
                           isActive: isActive,
                         );
                       },
@@ -254,9 +254,9 @@ class _SectionHeader extends StatelessWidget {
 
 class _CategoryChip extends StatelessWidget {
   final String label;
-  final String emoji;
+  final IconData icon;
   final bool isActive;
-  const _CategoryChip({required this.label, required this.emoji, this.isActive = false});
+  const _CategoryChip({required this.label, required this.icon, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +273,7 @@ class _CategoryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
+          Icon(icon, size: 16, color: isActive ? AppColors.onPrimary : AppColors.onSurface),
           const SizedBox(width: 6),
           Text(
             label,
@@ -379,17 +379,22 @@ class _TrendingCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          duration: const Duration(seconds: 2),
-                          builder: (context, val, _) => LinearProgressIndicator(
-                            value: val * 0.7, // Simulated active progress
-                            backgroundColor: _timerColor.withAlpha(50),
-                            valueColor: AlwaysStoppedAnimation<Color>(_timerColor),
-                            minHeight: 3,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+                        Builder(builder: (ctx) {
+                          final totalDuration = auction.endTime.difference(auction.createdAt).inSeconds;
+                          final elapsed = DateTime.now().difference(auction.createdAt).inSeconds;
+                          final progress = (totalDuration > 0 ? elapsed / totalDuration : 1.0).clamp(0.0, 1.0);
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: progress),
+                            duration: const Duration(seconds: 2),
+                            builder: (context, val, _) => LinearProgressIndicator(
+                              value: val,
+                              backgroundColor: _timerColor.withAlpha(50),
+                              valueColor: AlwaysStoppedAnimation<Color>(_timerColor),
+                              minHeight: 3,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -449,17 +454,22 @@ class _RecentListingCard extends StatelessWidget {
                     Text('Live Now', style: AppTextStyles.labelSmall.copyWith(color: AppColors.timerGreen)),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(seconds: 2),
-                        builder: (context, val, _) => LinearProgressIndicator(
-                          value: val * 0.6, // Simulated active progress
-                          backgroundColor: AppColors.timerGreen.withAlpha(50),
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.timerGreen),
-                          minHeight: 3,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
+                      child: Builder(builder: (ctx) {
+                        final totalDuration = auction.endTime.difference(auction.createdAt).inSeconds;
+                        final elapsed = DateTime.now().difference(auction.createdAt).inSeconds;
+                        final progress = (totalDuration > 0 ? elapsed / totalDuration : 1.0).clamp(0.0, 1.0);
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: progress),
+                          duration: const Duration(seconds: 2),
+                          builder: (context, val, _) => LinearProgressIndicator(
+                            value: val,
+                            backgroundColor: AppColors.timerGreen.withAlpha(50),
+                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.timerGreen),
+                            minHeight: 3,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        );
+                      }),
                     ),
                     const SizedBox(width: 16),
                   ],

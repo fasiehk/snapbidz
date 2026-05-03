@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/data/dummy_data.dart';
 import '../../core/widgets/glass_card.dart';
+import '../auctions/models/auction_model.dart';
 
-class WatchlistScreen extends StatelessWidget {
+class WatchlistScreen extends ConsumerWidget {
   const WatchlistScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watchlist backend not implemented yet, so we show an empty state.
+    final List<AuctionModel> watchlist = [];
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -26,7 +30,7 @@ class WatchlistScreen extends StatelessWidget {
                   Text('Your Watchlist', style: AppTextStyles.headlineMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Tracking ${AppDummyData.watchlist.length} high-value auctions',
+                    'Tracking ${watchlist.length} high-value auctions',
                     style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
                   ),
                 ],
@@ -37,15 +41,28 @@ class WatchlistScreen extends StatelessWidget {
 
             // ── List ─────────────────────────────────────────────────────────
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                itemCount: AppDummyData.watchlist.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, i) {
-                  final item = AppDummyData.watchlist[i];
-                  return _WatchlistCard(auction: item, onTap: () => context.push('/auction/${item.id}'));
-                },
-              ),
+              child: watchlist.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.favorite_border_rounded, size: 64, color: AppColors.outline),
+                          const SizedBox(height: 16),
+                          Text('Your watchlist is empty', style: AppTextStyles.titleMedium),
+                          const SizedBox(height: 8),
+                          Text('Items you watch will appear here.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
+                      itemCount: watchlist.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, i) {
+                        final item = watchlist[i];
+                        return _WatchlistCard(auction: item, onTap: () => context.push('/auction/${item.id}'));
+                      },
+                    ),
             ),
           ],
         ),
@@ -55,7 +72,7 @@ class WatchlistScreen extends StatelessWidget {
 }
 
 class _WatchlistCard extends StatefulWidget {
-  final DummyAuction auction;
+  final AuctionModel auction;
   final VoidCallback onTap;
   const _WatchlistCard({required this.auction, required this.onTap});
 
@@ -67,12 +84,21 @@ class _WatchlistCardState extends State<_WatchlistCard> {
   bool _watching = true;
 
   Color get _timerColor {
-    if (widget.auction.timeLeft.contains('h') && !widget.auction.timeLeft.contains('d')) {
-      final h = int.tryParse(widget.auction.timeLeft.split('h')[0]) ?? 99;
-      if (h <= 2) return AppColors.timerCoral;
-      return AppColors.timerAmber;
-    }
+    final diff = widget.auction.endTime.difference(DateTime.now());
+    if (diff.inHours < 1) return AppColors.timerCoral;
+    if (diff.inHours <= 24) return AppColors.timerAmber;
     return AppColors.timerGreen;
+  }
+  
+  String get _timeLeft {
+    final diff = widget.auction.endTime.difference(DateTime.now());
+    if (diff.inDays > 0) return '${diff.inDays}d ${diff.inHours % 24}h';
+    return '${diff.inHours}h ${diff.inMinutes % 60}m';
+  }
+
+  String _formatCurrency(int value) {
+    if (value >= 1000) return 'PKR ${(value / 1000).toStringAsFixed(1)}k';
+    return 'PKR $value';
   }
 
   @override
@@ -91,8 +117,16 @@ class _WatchlistCardState extends State<_WatchlistCard> {
                 decoration: BoxDecoration(
                   color: AppColors.primaryFixed,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+                  image: widget.auction.imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(widget.auction.imageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: Center(child: Text(widget.auction.imageEmoji, style: const TextStyle(fontSize: 36))),
+                child: widget.auction.imageUrl == null
+                    ? Center(child: Text(widget.auction.imageEmoji, style: const TextStyle(fontSize: 36)))
+                    : null,
               ),
               const SizedBox(width: AppConstants.spaceMD),
               Expanded(
@@ -134,7 +168,7 @@ class _WatchlistCardState extends State<_WatchlistCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Current Bid', style: AppTextStyles.labelSmall),
-                  Text(widget.auction.currentBid, style: AppTextStyles.priceMedium),
+                  Text(_formatCurrency(widget.auction.currentBid), style: AppTextStyles.priceMedium),
                 ],
               ),
               const Spacer(),
@@ -157,7 +191,7 @@ class _WatchlistCardState extends State<_WatchlistCard> {
                   children: [
                     Icon(Icons.timer_outlined, size: 13, color: _timerColor),
                     const SizedBox(width: 4),
-                    Text(widget.auction.timeLeft, style: AppTextStyles.labelMedium.copyWith(color: _timerColor)),
+                    Text(_timeLeft, style: AppTextStyles.labelMedium.copyWith(color: _timerColor)),
                   ],
                 ),
               ),

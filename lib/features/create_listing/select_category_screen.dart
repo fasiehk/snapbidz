@@ -4,248 +4,416 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../core/data/category_data.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_text_styles.dart';
 
-class SelectCategoryScreen extends ConsumerWidget {
+class SelectCategoryScreen extends ConsumerStatefulWidget {
   const SelectCategoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SelectCategoryScreen> createState() => _SelectCategoryScreenState();
+}
+
+class _SelectCategoryScreenState extends ConsumerState<SelectCategoryScreen> with TickerProviderStateMixin {
+  final TextEditingController _searchController = TextEditingController();
+  late AnimationController _staggerController;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _staggerController.forward();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _staggerController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authControllerProvider).value;
-    
+    final filteredCategories = CategoryData.categories.where((cat) {
+      return cat.name.toLowerCase().contains(_searchQuery);
+    }).toList();
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topLeft,
-            radius: 1.5,
-            colors: [
-              Color(0xFFfff1f2), // Light pinkish
-              Color(0xFFfcf8ff), // Surface color
-              Color(0xFFe0e7ff), // Light blueish
-            ],
-            stops: [0.0, 0.3, 1.0],
+      body: Stack(
+        children: [
+          // ── Dynamic Mesh Gradient Background ──────────────────────────────
+          Positioned.fill(
+            child: Container(color: const Color(0xFFF8F9FE)),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Top App Bar
-              Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 30,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          Positioned(
+            top: -100,
+            left: -100,
+            child: _BlurredCircle(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              size: 400,
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: _BlurredCircle(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              size: 350,
+            ),
+          ),
+          Positioned(
+            top: 200,
+            right: -100,
+            child: _BlurredCircle(
+              color: const Color(0xFFE0E7FF).withValues(alpha: 0.4),
+              size: 300,
+            ),
+          ),
+
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // ── Premium Header ──────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => context.go('/home'),
-                              child: const Icon(Icons.arrow_back, color: Color(0xFF4648d4)),
-                            ),
-                            const SizedBox(width: 16),
-                            const Text(
-                              'All Categories',
-                              style: TextStyle(
-                                fontFamily: 'Manrope',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF4648d4),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
+                        _HeaderIconButton(
+                          icon: Icons.close_rounded,
+                          onTap: () => context.go('/home'),
                         ),
-                        if (user != null)
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF6063ee), width: 2),
-                              image: user.prefs.data.containsKey('profileUrl')
-                                  ? DecorationImage(
-                                      image: NetworkImage(user.prefs.data['profileUrl']),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: !user.prefs.data.containsKey('profileUrl')
-                                ? Center(
-                                    child: Text(
-                                      user.name.substring(0, 1).toUpperCase(),
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6063ee)),
-                                    ),
-                                  )
-                                : null,
-                          ),
+                        const Spacer(),
+                        if (user != null) _UserAvatar(user: user),
                       ],
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Search Bar
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
-                              blurRadius: 2,
-                            )
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: TextField(
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: const InputDecoration(
-                                hintText: 'Search categories to sell...',
-                                hintStyle: TextStyle(color: Color(0xFF767586), fontFamily: 'Inter'),
-                                prefixIcon: Icon(Icons.search, color: Color(0xFF767586)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              ),
-                            ),
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sell on SnapBid',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.primary,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      const Text(
-                        'What are you selling?',
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1b1b23),
-                          height: 1.4,
+                        const SizedBox(height: 8),
+                        Text(
+                          'What are you\nlisting today?',
+                          style: AppTextStyles.headlineLarge.copyWith(
+                            fontSize: 34,
+                            height: 1.1,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Select a category to start your listing',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF464554),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
+                        
+                        // ── Premium Search Bar ────────────────────────────────
+                        _PremiumSearchBar(controller: _searchController),
+                      ],
+                    ),
+                  ),
+                ),
 
-                      // Grid
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.0,
-                        ),
-                        itemCount: CategoryData.categories.length,
-                        itemBuilder: (context, index) {
-                          final category = CategoryData.categories[index];
-                          return _buildCategoryCard(context, category);
-                        },
-                      ),
-                    ],
+                // ── Categories Grid ──────────────────────────────────────────
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.95,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final category = filteredCategories[index];
+                        return _StaggeredCategoryTile(
+                          category: category,
+                          index: index,
+                          totalItems: filteredCategories.length,
+                          controller: _staggerController,
+                          onTap: () {
+                            if (category.subCategories != null && category.subCategories!.isNotEmpty) {
+                              context.push('/create/subcategory', extra: category);
+                            } else {
+                              context.push('/create/details', extra: {
+                                'category': category.name,
+                                'subCategory': null
+                              });
+                            }
+                          },
+                        );
+                      },
+                      childCount: filteredCategories.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _BlurredCircle extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _BlurredCircle({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+        child: Container(color: Colors.transparent),
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 20, color: AppColors.onSurface),
+      ),
+    );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  final dynamic user;
+  const _UserAvatar({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final profileUrl = user.prefs.data['profileUrl'];
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: profileUrl != null
+            ? Image.network(profileUrl, fit: BoxFit.cover)
+            : Container(
+                color: AppColors.primaryContainer,
+                child: Center(
+                  child: Text(
+                    user.name.substring(0, 1).toUpperCase(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
-            ],
+      ),
+    );
+  }
+}
+
+class _PremiumSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  const _PremiumSearchBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        style: AppTextStyles.bodyLarge,
+        decoration: InputDecoration(
+          hintText: 'Search categories...',
+          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline),
+          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 24),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );
   }
+}
 
-  Widget _buildCategoryCard(BuildContext context, AuctionCategory category) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          if (category.subCategories != null && category.subCategories!.isNotEmpty) {
-            context.push('/create/subcategory', extra: category);
-          } else {
-            context.push('/create/details', extra: {'category': category.name, 'subCategory': null});
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFe1e0ff), // primary-fixed
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        category.icon,
-                        color: const Color(0xFF4648d4),
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      category.name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'Manrope',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1b1b23),
-                        height: 1.2,
-                      ),
-                    ),
+class _StaggeredCategoryTile extends StatefulWidget {
+  final AuctionCategory category;
+  final int index;
+  final int totalItems;
+  final AnimationController controller;
+  final VoidCallback onTap;
+
+  const _StaggeredCategoryTile({
+    required this.category,
+    required this.index,
+    required this.totalItems,
+    required this.controller,
+    required this.onTap,
+  });
+
+  @override
+  State<_StaggeredCategoryTile> createState() => _StaggeredCategoryTileState();
+}
+
+class _StaggeredCategoryTileState extends State<_StaggeredCategoryTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = CurvedAnimation(
+      parent: widget.controller,
+      curve: Interval(
+        (widget.index / widget.totalItems) * 0.6,
+        ((widget.index + 1) / widget.totalItems) * 0.6 + 0.4,
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    return ScaleTransition(
+      scale: animation,
+      child: FadeTransition(
+        opacity: animation,
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isHovered = true),
+          onTapUp: (_) => setState(() => _isHovered = false),
+          onTapCancel: () => setState(() => _isHovered = false),
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            scale: _isHovered ? 0.96 : 1.0,
+            duration: const Duration(milliseconds: 150),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.9),
+                    Colors.white.withValues(alpha: 0.6),
                   ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white,
+                  width: 1.5,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Glass Orb Icon
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary.withValues(alpha: 0.1),
+                                AppColors.primary.withValues(alpha: 0.05),
+                              ],
+                            ),
+                          ),
+                          child: Icon(
+                            widget.category.icon,
+                            color: AppColors.primary,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.category.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: AppTextStyles.titleSmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -255,3 +423,4 @@ class SelectCategoryScreen extends ConsumerWidget {
     );
   }
 }
+

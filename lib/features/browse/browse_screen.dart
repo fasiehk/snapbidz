@@ -3,18 +3,27 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/data/dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/data/category_data.dart';
 import '../../core/widgets/glass_card.dart';
+import '../auctions/controllers/auction_controller.dart';
+import '../auctions/models/auction_model.dart';
 
-class BrowseScreen extends StatefulWidget {
+class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
   @override
-  State<BrowseScreen> createState() => _BrowseScreenState();
+  ConsumerState<BrowseScreen> createState() => _BrowseScreenState();
 }
 
-class _BrowseScreenState extends State<BrowseScreen> {
+class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   int _selectedCategory = 0;
   final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -83,10 +92,10 @@ class _BrowseScreenState extends State<BrowseScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                itemCount: AppDummyData.categories.length,
+                itemCount: CategoryData.categories.length + 1,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
-                  final cat = AppDummyData.categories[i];
+                  final cat = i == 0 ? const AuctionCategory(name: 'All', icon: Icons.category) : CategoryData.categories[i - 1];
                   final isActive = _selectedCategory == i;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedCategory = i),
@@ -103,10 +112,10 @@ class _BrowseScreenState extends State<BrowseScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(cat['emoji']!, style: const TextStyle(fontSize: 13)),
+                          Icon(cat.icon, size: 16, color: isActive ? AppColors.onPrimary : AppColors.onSurface),
                           const SizedBox(width: 5),
                           Text(
-                            cat['label']!,
+                            cat.name,
                             style: AppTextStyles.labelMedium.copyWith(
                               color: isActive ? AppColors.onPrimary : AppColors.onSurface,
                             ),
@@ -123,18 +132,38 @@ class _BrowseScreenState extends State<BrowseScreen> {
 
             // ── Grid ─────────────────────────────────────────────────────────
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.72,
-                ),
-                itemCount: AppDummyData.browseItems.length,
-                itemBuilder: (context, i) {
-                  final item = AppDummyData.browseItems[i];
-                  return _BrowseCard(auction: item, onTap: () => context.push('/auction/${item.id}'));
+              child: ref.watch(allAuctionsProvider).when(
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                error: (err, _) => Center(child: Text('Error: $err', style: TextStyle(color: AppColors.error))),
+                data: (auctions) {
+                  // Filter by category and search text
+                  final categoryFilter = _selectedCategory == 0 ? null : CategoryData.categories[_selectedCategory - 1].name;
+                  final searchQuery = _searchController.text.toLowerCase();
+                  
+                  final filtered = auctions.where((a) {
+                    final matchesCategory = categoryFilter == null || a.category == categoryFilter;
+                    final matchesSearch = searchQuery.isEmpty || a.title.toLowerCase().contains(searchQuery);
+                    return matchesCategory && matchesSearch;
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return const Center(child: Text('No items found.'));
+                  }
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.72,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, i) {
+                      final item = filtered[i];
+                      return _BrowseCard(auction: item, onTap: () => context.push('/auction/${item.id}'));
+                    },
+                  );
                 },
               ),
             ),
@@ -146,17 +175,26 @@ class _BrowseScreenState extends State<BrowseScreen> {
 }
 
 class _BrowseCard extends StatelessWidget {
-  final DummyAuction auction;
+  final AuctionModel auction;
   final VoidCallback onTap;
   const _BrowseCard({required this.auction, required this.onTap});
 
   Color get _timerColor {
-    if (auction.timeLeft.contains('h') && !auction.timeLeft.contains('d')) {
-      final h = int.tryParse(auction.timeLeft.split('h')[0]) ?? 99;
-      if (h <= 2) return AppColors.timerCoral;
-      return AppColors.timerAmber;
-    }
+    final diff = auction.endTime.difference(DateTime.now());
+    if (diff.inHours < 1) return AppColors.timerCoral;
+    if (diff.inHours <= 24) return AppColors.timerAmber;
     return AppColors.timerGreen;
+  }
+  
+  String get _timeLeft {
+    final diff = auction.endTime.difference(DateTime.now());
+    if (diff.inDays > 0) return '${diff.inDays}d ${diff.inHours % 24}h';
+    return '${diff.inHours}h ${diff.inMinutes % 60}m';
+  }
+
+  String _formatCurrency(int value) {
+    if (value >= 1000) return 'PKR ${(value / 1000).toStringAsFixed(1)}k';
+    return 'PKR $value';
   }
 
   @override
@@ -172,8 +210,16 @@ class _BrowseCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.primaryFixed,
               borderRadius: BorderRadius.circular(AppConstants.radiusMD),
+              image: auction.imageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(auction.imageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 48))),
+            child: auction.imageUrl == null
+                ? Center(child: Text(auction.imageEmoji, style: const TextStyle(fontSize: 48)))
+                : null,
           ),
           const SizedBox(height: AppConstants.spaceSM),
           Container(
@@ -188,7 +234,7 @@ class _BrowseCard extends StatelessWidget {
           Text(auction.title, style: AppTextStyles.titleSmall.copyWith(fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
           const Spacer(),
           Text('Current Bid', style: AppTextStyles.labelSmall),
-          Text(auction.currentBid, style: AppTextStyles.priceSmall),
+          Text(_formatCurrency(auction.currentBid), style: AppTextStyles.priceSmall),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -201,7 +247,7 @@ class _BrowseCard extends StatelessWidget {
               children: [
                 Icon(Icons.timer_outlined, size: 11, color: _timerColor),
                 const SizedBox(width: 3),
-                Text(auction.timeLeft, style: AppTextStyles.labelSmall.copyWith(color: _timerColor, fontSize: 10)),
+                Text(_timeLeft, style: AppTextStyles.labelSmall.copyWith(color: _timerColor, fontSize: 10)),
               ],
             ),
           ),

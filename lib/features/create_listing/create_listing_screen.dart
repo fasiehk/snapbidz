@@ -9,6 +9,11 @@ import '../auctions/models/auction_model.dart';
 import '../auctions/repositories/auction_repository.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auth/controllers/auth_controller.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/app_text_field.dart';
 
 class CreateListingScreen extends ConsumerStatefulWidget {
   final String category;
@@ -26,7 +31,7 @@ class CreateListingScreen extends ConsumerStatefulWidget {
   ConsumerState<CreateListingScreen> createState() => _CreateListingScreenState();
 }
 
-class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
+class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with TickerProviderStateMixin {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _startingPriceController = TextEditingController();
@@ -34,10 +39,28 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   bool _isLoading = false;
   bool _acceptedTerms = false;
   
+  late AnimationController _staggerController;
   final _picker = ImagePicker();
   List<XFile> _selectedImages = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _staggerController.forward();
+  }
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _startingPriceController.dispose();
+    _staggerController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickEndTime() async {
     final DateTime? date = await showDatePicker(
@@ -45,6 +68,18 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (date != null && mounted) {
       final TimeOfDay? time = await showTimePicker(
@@ -65,14 +100,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _startingPriceController.dispose();
-    super.dispose();
-  }
-
   Future<void> _pickImages() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
@@ -80,40 +107,47 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         setState(() {
           if (_selectedImages.length + images.length > 10) {
             _selectedImages.addAll(images.take(10 - _selectedImages.length));
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Maximum 10 images allowed.')));
+            _showSnackBar('Maximum 10 images allowed.');
           } else {
             _selectedImages.addAll(images);
           }
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking images: $e')));
-      }
+      if (mounted) _showSnackBar('Error picking images: $e');
     }
   }
 
   void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
+    setState(() => _selectedImages.removeAt(index));
+  }
+
+  void _showSnackBar(String message, {Color? backgroundColor}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor ?? AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   Future<void> _publishListing() async {
     if (_titleController.text.isEmpty || _startingPriceController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields.')));
+      _showSnackBar('Please fill all required fields.');
       return;
     }
     if (_selectedEndTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an auction end time.')));
+      _showSnackBar('Please select an auction end time.');
       return;
     }
     if (_selectedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one photo.')));
+      _showSnackBar('Please select at least one photo.');
       return;
     }
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please accept the terms to continue.')));
+      _showSnackBar('Please accept the terms to continue.');
       return;
     }
 
@@ -122,21 +156,15 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final user = ref.read(authControllerProvider).value;
       if (user == null) throw Exception('Not logged in');
 
-      String? imageUrl;
       List<String> uploadedUrls = [];
-      if (_selectedImages.isNotEmpty) {
-        for (var img in _selectedImages) {
-          final bytes = await img.readAsBytes();
-          final url = await ref.read(auctionRepositoryProvider).uploadImage(bytes, img.name);
-          uploadedUrls.add(url);
-        }
-        if (uploadedUrls.isNotEmpty) imageUrl = uploadedUrls.first;
+      for (var img in _selectedImages) {
+        final bytes = await img.readAsBytes();
+        final url = await ref.read(auctionRepositoryProvider).uploadImage(bytes, img.name);
+        uploadedUrls.add(url);
       }
 
-      final endTime = _selectedEndTime!;
-
       final auction = AuctionModel(
-        id: '', // Will be generated by Appwrite
+        id: '',
         createdAt: DateTime.now(),
         title: _titleController.text,
         subtitle: widget.subCategory ?? widget.category,
@@ -144,529 +172,236 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         subCategory: widget.subCategory,
         description: _descriptionController.text.isNotEmpty ? _descriptionController.text : 'No description provided.',
         imageEmoji: '📦',
-        imageUrl: imageUrl,
+        imageUrl: uploadedUrls.isNotEmpty ? uploadedUrls.first : null,
         imageUrls: uploadedUrls,
         currentBid: int.tryParse(_startingPriceController.text) ?? 0,
         totalBids: 0,
         status: 'active',
-        endTime: endTime,
+        endTime: _selectedEndTime!,
         sellerId: user.$id,
         sellerName: user.name,
       );
 
       await ref.read(auctionRepositoryProvider).createAuction(auction);
 
+      ref.invalidate(allAuctionsProvider);
       ref.invalidate(recentAuctionsProvider);
       ref.invalidate(trendingAuctionsProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('🎉 Listing published successfully!'),
-            backgroundColor: const Color(0xFF006c49),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
+        _showSnackBar('🎉 Listing published successfully!', backgroundColor: const Color(0xFF006C49));
         context.go('/home');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      if (mounted) _showSnackBar('Error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Widget _buildCardPanel({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: child,
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(IconData icon, String title) {
+  Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF4648d4), size: 24),
-        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontFamily: 'Manrope',
-            fontSize: 24,
+          style: AppTextStyles.titleMedium.copyWith(
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1b1b23),
+            color: AppColors.onSurface,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildInputLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF464554),
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, {Widget? prefixIcon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF767586), fontFamily: 'Inter'),
-      prefixIcon: prefixIcon,
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.all(16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF4648d4), width: 1.5),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
       body: Stack(
         children: [
-          
+          // Mesh Gradient Background
+          Positioned.fill(child: Container(color: const Color(0xFFF8F9FE))),
+          Positioned(top: -100, left: -100, child: _BlurredCircle(color: AppColors.primary.withValues(alpha: 0.12), size: 400)),
+          Positioned(bottom: -50, right: -50, child: _BlurredCircle(color: AppColors.accent.withValues(alpha: 0.08), size: 350)),
+
           SafeArea(
             child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverAppBar(
-                  backgroundColor: Colors.white,
-                  pinned: true,
-                  elevation: 1,
-                  shadowColor: Colors.black.withValues(alpha: 0.1),
-                  leading: IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF1b1b23)),
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/home');
-                      }
-                    },
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: _CircleIconButton(
+                      icon: Icons.close_rounded,
+                      onTap: () => context.canPop() ? context.pop() : context.go('/home'),
+                    ),
                   ),
-                  title: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.gavel, color: Color(0xFF4648d4), size: 24),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Post an Ad',
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1b1b23),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
+                  title: Text('Create Listing', style: AppTextStyles.titleLarge),
                   centerTitle: true,
                 ),
+
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      const Text(
-                        'Create New Listing',
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1b1b23),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Fill in the details to showcase your item to thousands of bidders.',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 16,
-                          color: Color(0xFF464554),
+                      _AnimatedSection(
+                        index: 0,
+                        controller: _staggerController,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Post an Item', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Showcase your item to thousands of bidders globally.',
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 32),
 
-                      // Section 1: Photos
-                      _buildCardPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildSectionTitle(Icons.photo_library_outlined, 'Photos'),
-                                Text(
-                                  '${_selectedImages.length} / 10 Images',
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    color: Color(0xFF767586),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (_selectedImages.isEmpty)
-                              GestureDetector(
-                                onTap: _pickImages,
-                                child: Container(
-                                  height: 200,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: const Color(0xFFE5E7EB),
-                                      style: BorderStyle.solid,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_photo_alternate_outlined, size: 40, color: Color(0xFF767586)),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'Add Main Photo',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF767586),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              Column(
+                      // Photos Section
+                      _AnimatedSection(
+                        index: 1,
+                        controller: _staggerController,
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Container(
-                                    height: 200,
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      image: DecorationImage(
-                                        image: kIsWeb
-                                            ? NetworkImage(_selectedImages.first.path)
-                                            : FileImage(File(_selectedImages.first.path)) as ImageProvider,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topRight,
-                                      child: IconButton(
-                                        icon: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 16),
-                                        ),
-                                        onPressed: () => _removeImage(0),
-                                      ),
-                                    ),
+                                  _buildSectionHeader(Icons.photo_library_outlined, 'Photos'),
+                                  Text(
+                                    '${_selectedImages.length}/10',
+                                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline),
                                   ),
-                                  if (_selectedImages.length > 1 || _selectedImages.length < 10)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 16.0),
-                                      child: SizedBox(
-                                        height: 80,
-                                        child: ListView.builder(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: (_selectedImages.length - 1) + (_selectedImages.length < 10 ? 1 : 0),
-                                          itemBuilder: (context, index) {
-                                            if (index == _selectedImages.length - 1 && _selectedImages.length < 10) {
-                                              return GestureDetector(
-                                                onTap: _pickImages,
-                                                child: Container(
-                                                  width: 80,
-                                                  margin: const EdgeInsets.only(right: 8),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-                                                  ),
-                                                  child: const Icon(Icons.add, color: Color(0xFF767586)),
-                                                ),
-                                              );
-                                            }
-                                            final imgIndex = index + 1;
-                                            return Container(
-                                              width: 80,
-                                              margin: const EdgeInsets.only(right: 8),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                                image: DecorationImage(
-                                                  image: kIsWeb
-                                                      ? NetworkImage(_selectedImages[imgIndex].path)
-                                                      : FileImage(File(_selectedImages[imgIndex].path)) as ImageProvider,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                              child: Align(
-                                                alignment: Alignment.topRight,
-                                                child: GestureDetector(
-                                                  onTap: () => _removeImage(imgIndex),
-                                                  child: Container(
-                                                    margin: const EdgeInsets.all(4),
-                                                    padding: const EdgeInsets.all(2),
-                                                    decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                                    child: const Icon(Icons.close, color: Colors.white, size: 12),
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
-                          ],
+                              const SizedBox(height: 20),
+                              if (_selectedImages.isEmpty)
+                                _EmptyPhotoPlaceholder(onTap: _pickImages)
+                              else
+                                _PhotoGrid(
+                                  images: _selectedImages,
+                                  onAdd: _pickImages,
+                                  onRemove: _removeImage,
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Section 2: Item Basics
-                      _buildCardPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.edit_note_outlined, 'Item Basics'),
-                            const SizedBox(height: 24),
-                            _buildInputLabel('Listing Title'),
-                            TextField(
-                              controller: _titleController,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('e.g. Rare 1964 Vintage Chronograph'),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInputLabel('Selected Category'),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFc7c4d7), width: 1),
+                      // Basics Section
+                      _AnimatedSection(
+                        index: 2,
+                        controller: _staggerController,
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.edit_note_rounded, 'Item Basics'),
+                              const SizedBox(height: 20),
+                              AppTextField(
+                                label: 'Listing Title',
+                                hint: 'e.g. Rare 1964 Vintage Chronograph',
+                                controller: _titleController,
                               ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          [
-                                            widget.category,
-                                            if (widget.subCategory != null) widget.subCategory!,
-                                            if (widget.model != null) widget.model!
-                                          ].join(' > '),
-                                          style: const TextStyle(
-                                            fontFamily: 'Inter',
-                                            color: Color(0xFF1b1b23),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      // Pop back to re-select
-                                      context.pop();
-                                      if (widget.subCategory != null) {
-                                        context.pop();
-                                      }
-                                      if (widget.model != null) {
-                                        context.pop();
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFe1e0ff),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text('Change', style: TextStyle(color: Color(0xFF4648d4), fontWeight: FontWeight.bold, fontFamily: 'Inter', fontSize: 12)),
-                                    ),
-                                  )
-                                ],
+                              const SizedBox(height: 20),
+                              _CategoryBreadcrumb(
+                                category: widget.category,
+                                subCategory: widget.subCategory,
+                                model: widget.model,
+                                onChange: () => context.pop(),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Section 3: Description
-                      _buildCardPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.description_outlined, 'Description'),
-                            const SizedBox(height: 16),
-                            _buildInputLabel('Item Details'),
-                            TextField(
-                              controller: _descriptionController,
-                              maxLines: 5,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('Describe your item in detail...'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Section 4: Auction Settings
-                      _buildCardPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.payments_outlined, 'Auction Settings'),
-                            const SizedBox(height: 24),
-                            _buildInputLabel('Starting Price (PKR)'),
-                            TextField(
-                              controller: _startingPriceController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('0.00', prefixIcon: const Padding(
-                                padding: EdgeInsets.only(left: 16.0, right: 8.0),
-                                child: Text('PKR ', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF767586))),
-                              )).copyWith(prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0)),
-                            ),
-                            _buildInputLabel('Auction End Time'),
-                            GestureDetector(
-                              onTap: _pickEndTime,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.calendar_month_outlined, color: Color(0xFF767586)),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _selectedEndTime == null
-                                          ? 'Select Date & Time'
-                                          : '${_selectedEndTime!.day}/${_selectedEndTime!.month}/${_selectedEndTime!.year} at ${_selectedEndTime!.hour}:${_selectedEndTime!.minute.toString().padLeft(2, '0')}',
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 16,
-                                        color: _selectedEndTime == null ? const Color(0xFF767586) : const Color(0xFF1b1b23),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                      // Description Section
+                      _AnimatedSection(
+                        index: 3,
+                        controller: _staggerController,
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.description_outlined, 'Description'),
+                              const SizedBox(height: 20),
+                              AppTextField(
+                                label: 'Item Details',
+                                hint: 'Describe the condition, history, and unique features...',
+                                controller: _descriptionController,
+                                maxLines: 4,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Terms and Submission
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0, bottom: 48.0),
+                      // Pricing & Time Section
+                      _AnimatedSection(
+                        index: 4,
+                        controller: _staggerController,
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.payments_outlined, 'Auction Info'),
+                              const SizedBox(height: 20),
+                              AppTextField(
+                                label: 'Starting Price (PKR)',
+                                hint: '0.00',
+                                controller: _startingPriceController,
+                                keyboardType: TextInputType.number,
+                                prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+                              ),
+                              const SizedBox(height: 20),
+                              _EndTimePicker(
+                                selectedTime: _selectedEndTime,
+                                onTap: _pickEndTime,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Final Submission
+                      _AnimatedSection(
+                        index: 5,
+                        controller: _staggerController,
                         child: Column(
                           children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Checkbox(
-                                  value: _acceptedTerms,
-                                  onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
-                                  activeColor: const Color(0xFF4648d4),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                ),
-                                const Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(top: 8.0),
-                                    child: Text.rich(
-                                      TextSpan(
-                                        text: 'I agree to the ',
-                                        style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF464554), height: 1.5),
-                                        children: [
-                                          TextSpan(text: 'SnapBid Terms of Service', style: TextStyle(color: Color(0xFF4f46e5), fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
-                                          TextSpan(text: ' and confirm that all information provided is accurate and I have the right to sell this item.'),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            _TermsCheckbox(
+                              value: _acceptedTerms,
+                              onChanged: (v) => setState(() => _acceptedTerms = v!),
                             ),
                             const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _publishListing,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4648d4),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  elevation: 8,
-                                  shadowColor: const Color(0xFF4648d4).withOpacity(0.5),
-                                ),
-                                child: _isLoading 
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                      ) 
-                                    : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text('List Item', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600)),
-                                          SizedBox(width: 8),
-                                          Icon(Icons.send_rounded, size: 20),
-                                        ],
-                                      ),
-                              ),
+                            _SubmitButton(
+                              isLoading: _isLoading,
+                              onPressed: _publishListing,
                             ),
+                            const SizedBox(height: 40),
                           ],
                         ),
                       ),
@@ -676,8 +411,427 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               ],
             ),
           ),
+          
+          if (_isLoading) _GlobalLoadingOverlay(),
         ],
       ),
     );
   }
 }
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _BlurredCircle extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _BlurredCircle({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+        child: Container(color: Colors.transparent),
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Icon(icon, size: 20, color: AppColors.onSurface),
+      ),
+    );
+  }
+}
+
+class _AnimatedSection extends StatelessWidget {
+  final int index;
+  final AnimationController controller;
+  final Widget child;
+
+  const _AnimatedSection({required this.index, required this.controller, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Interval(index * 0.1, (index * 0.1) + 0.5, curve: Curves.easeOut),
+    );
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(animation),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _EmptyPhotoPlaceholder extends StatelessWidget {
+  final VoidCallback onTap;
+  const _EmptyPhotoPlaceholder({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 160,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 1.5, style: BorderStyle.solid),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo_outlined, size: 40, color: AppColors.primary.withValues(alpha: 0.5)),
+            const SizedBox(height: 12),
+            Text('Add photos of your item', style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary)),
+            Text('Up to 10 images allowed', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoGrid extends StatelessWidget {
+  final List<XFile> images;
+  final VoidCallback onAdd;
+  final Function(int) onRemove;
+
+  const _PhotoGrid({required this.images, required this.onAdd, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Main Image
+        Stack(
+          children: [
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                  image: kIsWeb ? NetworkImage(images.first.path) : FileImage(File(images.first.path)) as ImageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _SmallRemoveButton(onTap: () => onRemove(0)),
+            ),
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                child: const Text('Cover Photo', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+        if (images.length > 1 || images.length < 10) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: images.length < 10 ? images.length : images.length,
+              itemBuilder: (context, index) {
+                if (index == images.length - 1 && images.length < 10) {
+                  return _AddMorePhotosButton(onTap: onAdd);
+                }
+                if (index == 0) return const SizedBox.shrink(); // Skip cover photo
+                
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          image: DecorationImage(
+                            image: kIsWeb ? NetworkImage(images[index].path) : FileImage(File(images[index].path)) as ImageProvider,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: _SmallRemoveButton(onTap: () => onRemove(index), isSmall: true),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ]
+      ],
+    );
+  }
+}
+
+class _SmallRemoveButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool isSmall;
+  const _SmallRemoveButton({required this.onTap, this.isSmall = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(isSmall ? 4 : 6),
+        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+        child: Icon(Icons.close_rounded, size: isSmall ? 12 : 16, color: AppColors.error),
+      ),
+    );
+  }
+}
+
+class _AddMorePhotosButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddMorePhotosButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: const Icon(Icons.add_rounded, color: AppColors.primary),
+      ),
+    );
+  }
+}
+
+class _CategoryBreadcrumb extends StatelessWidget {
+  final String category;
+  final String? subCategory;
+  final String? model;
+  final VoidCallback onChange;
+
+  const _CategoryBreadcrumb({required this.category, this.subCategory, this.model, required this.onChange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Category', style: AppTextStyles.labelMedium.copyWith(color: AppColors.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  [category, if (subCategory != null) subCategory!, if (model != null) model!].join('  ›  '),
+                  style: AppTextStyles.titleSmall.copyWith(fontSize: 13, color: AppColors.primary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onChange,
+                child: Text(
+                  'Change',
+                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EndTimePicker extends StatelessWidget {
+  final DateTime? selectedTime;
+  final VoidCallback onTap;
+
+  const _EndTimePicker({required this.selectedTime, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Auction End Time', style: AppTextStyles.labelMedium.copyWith(color: AppColors.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.6)),
+                const SizedBox(width: 12),
+                Text(
+                  selectedTime == null
+                      ? 'Select date and time'
+                      : '${selectedTime!.day}/${selectedTime!.month}/${selectedTime!.year} at ${selectedTime!.hour}:${selectedTime!.minute.toString().padLeft(2, '0')}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: selectedTime == null ? AppColors.outline : AppColors.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.arrow_drop_down_rounded, color: AppColors.outline),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TermsCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+
+  const _TermsCheckbox({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppColors.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
+        const Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text.rich(
+              TextSpan(
+                text: 'I agree to the ',
+                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.onSurfaceVariant, height: 1.4),
+                children: [
+                  TextSpan(text: 'SnapBid Terms', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  TextSpan(text: ' and confirm this listing follows all safety guidelines.'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubmitButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _SubmitButton({required this.isLoading, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: isLoading
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Publish Listing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _GlobalLoadingOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black26,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+        child: const Center(
+          child: GlassCard(
+            width: 100,
+            height: 100,
+            padding: EdgeInsets.zero,
+            child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

@@ -471,7 +471,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                                   children: [
                                     if (e.key > 0) Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
                                     InkWell(
-                                      onTap: (isSeller && user?.$id != bid.bidderId) ? () {
+                                      onTap: (isSeller && user.$id != bid.bidderId) ? () {
                                         context.push(
                                           '/chat/${auction.id}',
                                           extra: {
