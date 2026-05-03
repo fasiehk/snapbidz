@@ -273,14 +273,14 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
                           children: [
                             _buildSectionTitle(Icons.payments_outlined, 'Auction Settings'),
                             const SizedBox(height: 24),
-                            _buildInputLabel('Starting Price (\$)'),
+                            _buildInputLabel('Starting Price (PKR)'),
                             TextField(
                               controller: _startingPriceController,
                               keyboardType: TextInputType.number,
                               style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
                               decoration: _inputDecoration('0.00', prefixIcon: const Padding(
                                 padding: EdgeInsets.only(left: 16.0, right: 8.0),
-                                child: Text('\$', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF767586))),
+                                child: Text('PKR ', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF767586))),
                               )).copyWith(prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0)),
                             ),
                           ],

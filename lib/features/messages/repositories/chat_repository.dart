@@ -111,14 +111,19 @@ class ChatRepository {
     );
 
     final allDocs = [...sent.documents, ...received.documents];
-    // Deduplicate by auctionId – keep latest message per thread
+    // Deduplicate by thread (auctionId + otherUserId) – keep latest message per thread
     final Map<String, Map<String, dynamic>> threads = {};
     for (final doc in allDocs) {
       final aId = doc.data['auctionId'] as String;
-      if (!threads.containsKey(aId)) {
+      final senderId = doc.data['senderId'] as String;
+      final receiverId = doc.data['receiverId'] as String;
+      final otherId = senderId == userId ? receiverId : senderId;
+      final threadKey = '${aId}_$otherId';
+      
+      if (!threads.containsKey(threadKey)) {
         final map = Map<String, dynamic>.from(doc.data);
         map['\$id'] = doc.$id;
-        threads[aId] = map;
+        threads[threadKey] = map;
       }
     }
     // Sort by createdAt descending

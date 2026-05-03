@@ -40,8 +40,8 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   }
 
   String _formatCurrency(int value) {
-    if (value >= 1000) return '\$${(value / 1000).toStringAsFixed(1)}k';
-    return '\$$value';
+    if (value >= 1000) return 'PKR ${(value / 1000).toStringAsFixed(1)}k';
+    return 'PKR $value';
   }
   
   String _timeLeft(DateTime endTime) {
@@ -51,7 +51,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   }
 
   String _timeAgo(DateTime time) {
-    final diff = DateTime.now().difference(time);
+    final diff = DateTime.now().difference(time.toLocal());
     if (diff.inDays > 0) return '${diff.inDays}d ago';
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
@@ -79,23 +79,23 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
         'auctionTitle': auction.title,
         'otherUserId': auction.sellerId,
         'otherUserName': auction.sellerName,
-        'currentBid': '\$${auction.currentBid}',
+        'currentBid': 'PKR ${auction.currentBid}',
       },
     );
   }
 
-  void _showBidDialog(AuctionModel auction) {
-    _bidController.text = (auction.currentBid + 100).toString();
+  void _showBidDialog(AuctionModel auction, int actualHighestBid) {
+    _bidController.text = (actualHighestBid + 100).toString();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _BidBottomSheet(
-        currentBid: '\$${auction.currentBid}',
+        currentBid: 'PKR $actualHighestBid',
         controller: _bidController,
         onPlace: () async {
           final amount = int.tryParse(_bidController.text) ?? 0;
-          if (amount <= auction.currentBid) {
+          if (amount <= actualHighestBid) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bid must be higher than current bid.')));
             return;
           }
@@ -220,7 +220,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     if (auctionAsync.hasValue && bidsAsync.hasValue) {
       final auction = auctionAsync.value!;
       final bids = bidsAsync.value ?? [];
-      final displayCurrentBid = bids.isNotEmpty ? bids.map((b) => b.amount).reduce((a, b) => a > b ? a : b) : auction.currentBid;
+      displayCurrentBid = bids.isNotEmpty ? bids.map((b) => b.amount).reduce((a, b) => a > b ? a : b) : auction.currentBid;
     }
 
     return Scaffold(
@@ -233,6 +233,8 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           final bids = bidsAsync.value ?? [];
           final actualHighestBid = bids.isNotEmpty ? bids.map((b) => b.amount).reduce((a, b) => a > b ? a : b) : auction.currentBid;
           final actualTotalBids = bids.length;
+          final user = ref.watch(authControllerProvider).value;
+          final isSeller = user != null && user.$id == auction.sellerId;
           
           final bodyDisplayCurrentBid = actualHighestBid;
           final bodyDisplayTotalBids = actualTotalBids;
@@ -387,20 +389,44 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
 
                       const SizedBox(height: AppConstants.spaceLG),
 
-                      // Bid stats card
                       GlassCard(
                         padding: const EdgeInsets.all(AppConstants.spaceMD),
-                        child: Row(
+                        child: Column(
                           children: [
-                            _StatBox(label: 'Current Bid', value: _formatCurrency(bodyDisplayCurrentBid), valueStyle: AppTextStyles.priceLarge),
-                            const SizedBox(width: 1),
-                            Container(width: 1, height: 48, color: AppColors.outlineVariant),
-                            const SizedBox(width: 1),
-                            _StatBox(label: 'Time Left', value: _timeLeft(auction.endTime), valueStyle: AppTextStyles.headlineSmall.copyWith(color: AppColors.timerAmber)),
-                            const SizedBox(width: 1),
-                            Container(width: 1, height: 48, color: AppColors.outlineVariant),
-                            const SizedBox(width: 1),
-                            _StatBox(label: 'Total Bids', value: '$bodyDisplayTotalBids', valueStyle: AppTextStyles.headlineSmall),
+                            Row(
+                              children: [
+                                _StatBox(label: 'Current Bid', value: _formatCurrency(bodyDisplayCurrentBid), valueStyle: AppTextStyles.priceLarge),
+                                const SizedBox(width: 1),
+                                Container(width: 1, height: 48, color: AppColors.outlineVariant),
+                                const SizedBox(width: 1),
+                                _StatBox(label: 'Time Left', value: _timeLeft(auction.endTime), valueStyle: AppTextStyles.headlineSmall.copyWith(color: AppColors.timerAmber)),
+                                const SizedBox(width: 1),
+                                Container(width: 1, height: 48, color: AppColors.outlineVariant),
+                                const SizedBox(width: 1),
+                                _StatBox(label: 'Total Bids', value: '$bodyDisplayTotalBids', valueStyle: AppTextStyles.headlineSmall),
+                              ],
+                            ),
+                            const SizedBox(height: AppConstants.spaceMD),
+                            Builder(
+                              builder: (context) {
+                                final totalDuration = auction.endTime.difference(auction.createdAt).inSeconds;
+                                final elapsed = DateTime.now().difference(auction.createdAt).inSeconds;
+                                double progress = totalDuration > 0 ? elapsed / totalDuration : 1.0;
+                                progress = progress.clamp(0.0, 1.0);
+                                
+                                return TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: progress),
+                                  duration: const Duration(seconds: 2),
+                                  builder: (context, val, _) => LinearProgressIndicator(
+                                    value: val,
+                                    backgroundColor: AppColors.timerAmber.withValues(alpha: 50),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.timerAmber),
+                                    minHeight: 4,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                );
+                              }
+                            ),
                           ],
                         ),
                       ),
@@ -444,9 +470,22 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                                 return Column(
                                   children: [
                                     if (e.key > 0) Divider(height: 1, color: AppColors.outlineVariant.withAlpha(80)),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      child: Row(
+                                    InkWell(
+                                      onTap: (isSeller && user?.$id != bid.bidderId) ? () {
+                                        context.push(
+                                          '/chat/${auction.id}',
+                                          extra: {
+                                            'auctionTitle': auction.title,
+                                            'otherUserId': bid.bidderId,
+                                            'otherUserName': bid.bidderName,
+                                            'currentBid': 'PKR ${auction.currentBid}',
+                                          },
+                                        );
+                                      } : null,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                                        child: Row(
                                         children: [
                                           Container(
                                             width: 32,
@@ -495,7 +534,8 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                                         ],
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ],
                                 );
                               }).toList(),
                             ),
@@ -561,7 +601,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Minimum next bid', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-                    Text('\$${displayCurrentBid + 100}', style: AppTextStyles.priceMedium),
+                    Text('PKR ${displayCurrentBid + 100}', style: AppTextStyles.priceMedium),
                   ],
                 ),
               ),
@@ -575,7 +615,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                     boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 14, offset: const Offset(0, 6))],
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: () => _showBidDialog(auction),
+                    onPressed: () => _showBidDialog(auction, displayCurrentBid),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
@@ -647,8 +687,8 @@ class _BidBottomSheet extends StatelessWidget {
             keyboardType: TextInputType.number,
             style: AppTextStyles.priceLarge,
             decoration: InputDecoration(
-              labelText: 'Your Bid (USD)',
-              prefixText: '\$',
+              labelText: 'Your Bid (PKR)',
+              prefixText: 'PKR ',
               filled: true,
               fillColor: AppColors.surfaceContainerLow,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.radiusSM)),

@@ -1,8 +1,10 @@
 class AuctionModel {
   final String id;
+  final DateTime createdAt;
   final String title;
   final String subtitle;
   final String category;
+  final String? subCategory;
   final String description;
   final String imageEmoji;
   final String? imageUrl;
@@ -16,9 +18,11 @@ class AuctionModel {
 
   AuctionModel({
     required this.id,
+    required this.createdAt,
     required this.title,
     required this.subtitle,
     required this.category,
+    this.subCategory,
     required this.description,
     required this.imageEmoji,
     this.imageUrl,
@@ -34,9 +38,11 @@ class AuctionModel {
   factory AuctionModel.fromMap(Map<String, dynamic> map) {
     return AuctionModel(
       id: map['\$id'] ?? '',
+      createdAt: map['\$createdAt'] != null ? DateTime.parse(map['\$createdAt']).toLocal() : DateTime.now(),
       title: map['title'] ?? '',
       subtitle: map['subtitle'] ?? '',
       category: map['category'] ?? '',
+      subCategory: map['subCategory'],
       description: map['description'] ?? '',
       imageEmoji: map['imageEmoji'] ?? '📦',
       imageUrl: map['imageUrl'],
@@ -46,7 +52,7 @@ class AuctionModel {
       currentBid: map['currentBid']?.toInt() ?? 0,
       totalBids: map['totalBids']?.toInt() ?? 0,
       status: map['status'] ?? 'active',
-      endTime: map['endTime'] != null ? DateTime.parse(map['endTime']) : DateTime.now().add(const Duration(days: 7)),
+      endTime: map['endTime'] != null ? DateTime.parse(map['endTime']).toLocal() : DateTime.now().add(const Duration(days: 7)),
       sellerId: map['sellerId'] ?? '',
       sellerName: map['sellerName'] ?? '',
     );
@@ -57,6 +63,7 @@ class AuctionModel {
       'title': title,
       'subtitle': subtitle,
       'category': category,
+      if (subCategory != null) 'subCategory': subCategory,
       'description': description,
       'imageEmoji': imageEmoji,
       if (imageUrl != null) 'imageUrl': imageUrl,
@@ -64,7 +71,7 @@ class AuctionModel {
       'currentBid': currentBid,
       'totalBids': totalBids,
       'status': status,
-      'endTime': endTime.toIso8601String(),
+      'endTime': endTime.toUtc().toIso8601String(),
       'sellerId': sellerId,
       'sellerName': sellerName,
     };

@@ -106,7 +106,7 @@ class ProfileScreen extends ConsumerWidget {
                       .isProfileComplete(user.$id);
                   if (!context.mounted) return;
                   if (isComplete) {
-                    context.push('/create-listing');
+                    context.push('/create');
                   } else {
                     context.push('/seller-verify');
                   }

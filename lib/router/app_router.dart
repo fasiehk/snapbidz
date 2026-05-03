@@ -12,6 +12,10 @@ import '../features/messages/chat_window_screen.dart';
 import '../features/bids/my_bids_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/create_listing/create_listing_screen.dart';
+import '../features/create_listing/select_category_screen.dart';
+import '../features/create_listing/select_subcategory_screen.dart';
+import '../features/create_listing/select_model_screen.dart';
+import '../core/data/category_data.dart';
 import '../features/create_listing/edit_listing_screen.dart';
 import '../features/main/main_shell.dart';
 import '../features/seller_verification/seller_verification_screen.dart';
@@ -87,8 +91,36 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const MyBidsScreen(),
     ),
     GoRoute(
-      path: '/create-listing',
-      builder: (context, state) => const CreateListingScreen(),
+      path: '/create',
+      builder: (context, state) => const SelectCategoryScreen(),
+    ),
+    GoRoute(
+      path: '/create/subcategory',
+      builder: (context, state) {
+        final category = state.extra as AuctionCategory;
+        return SelectSubCategoryScreen(category: category);
+      },
+    ),
+    GoRoute(
+      path: '/create/model',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return SelectModelScreen(
+          categoryName: extra['category'] as String,
+          subCategory: extra['subCategory'] as SubCategory,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/create/details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return CreateListingScreen(
+          category: extra['category'] as String? ?? 'Other',
+          subCategory: extra['subCategory'] as String?,
+          model: extra['model'] as String?,
+        );
+      },
     ),
     GoRoute(
       path: '/edit-listing',

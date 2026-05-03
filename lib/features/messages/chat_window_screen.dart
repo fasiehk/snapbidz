@@ -136,7 +136,12 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
                 ),
               ),
               data: (messages) {
-                if (messages.isEmpty) {
+                final filteredMessages = messages.where((m) => 
+                  (m.senderId == user?.$id && m.receiverId == widget.otherUserId) || 
+                  (m.senderId == widget.otherUserId && m.receiverId == user?.$id)
+                ).toList();
+
+                if (filteredMessages.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -144,7 +149,7 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
                         Container(
                           width: 64,
                           height: 64,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.primaryFixed,
                             shape: BoxShape.circle,
                           ),
@@ -166,7 +171,7 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
                 }
 
                 // Mark received messages as read
-                for (final msg in messages) {
+                for (final msg in filteredMessages) {
                   if (msg.receiverId == user?.$id && !msg.isRead) {
                     ref.read(chatRepositoryProvider).markAsRead(msg.id);
                   }
@@ -175,12 +180,12 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  itemCount: messages.length,
+                  itemCount: filteredMessages.length,
                   itemBuilder: (context, i) {
-                    final msg = messages[i];
+                    final msg = filteredMessages[i];
                     final isMe = msg.senderId == user?.$id;
                     final showDate = i == 0 ||
-                        !_sameDay(messages[i - 1].createdAt, msg.createdAt);
+                        !_sameDay(filteredMessages[i - 1].createdAt, msg.createdAt);
                     return Column(
                       children: [
                         if (showDate) _DateDivider(date: msg.createdAt),

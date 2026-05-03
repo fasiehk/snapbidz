@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SnapBid - All Categories</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Manrope:wght@700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e4e1ed",
+                        "surface": "#fcf8ff",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-tint": "#494bd6",
+                        "surface-container-low": "#f5f2fe",
+                        "surface-container-high": "#e9e6f3",
+                        "surface-container": "#efecf8",
+                        "on-tertiary-container": "#fffbff",
+                        "outline-variant": "#c7c4d7",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary": "#4648d4",
+                        "on-surface-variant": "#464554",
+                        "surface-dim": "#dbd8e4",
+                        "secondary-fixed": "#6ffbbe",
+                        "tertiary-fixed": "#ffdcc5",
+                        "surface-bright": "#fcf8ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "primary-container": "#6063ee",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#00714d",
+                        "inverse-on-surface": "#f2effb",
+                        "tertiary": "#904900",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#6cf8bb",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#c0c1ff",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e4e1ed",
+                        "secondary": "#006c49",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-primary-container": "#fffbff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#301400",
+                        "tertiary-container": "#b55d00",
+                        "on-background": "#1b1b23",
+                        "outline": "#767586",
+                        "inverse-surface": "#303038",
+                        "background": "#fcf8ff",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed": "#07006c",
+                        "on-surface": "#1b1b23",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "xxl": "48px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Manrope"],
+                        "body-lg": ["Inter"],
+                        "h2": ["Manrope"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "h1": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h2": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background: radial-gradient(circle at top left, #fff1f2, #fcf8ff 30%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface antialiased pb-24">
+<!-- Top App Bar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-6 py-3 h-16 bg-white/70 backdrop-blur-lg border-b border-white/30 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 transition-transform hover:opacity-80">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-manrope font-bold tracking-tight text-lg text-primary">All Categories</h1>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a young man with a friendly expression, set against a soft, blurred urban background. The lighting is warm and natural, creating a premium and trustworthy vibe. The image is crisp and high-quality, fitting a modern digital auction platform's aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx0RUyzaG4-PASIesXNI3KGx6UTdzgtHkSbGlkUmbShOsoaLde0jEKN5ZzK-NwWDa2ZBaKSCsNzTgVeppl0dZpKlLqFBFcDoiGutzhC2n6X5U7ASi11Fkc5gHAaWddyMGq5km5XgNbQrVqDrtBhhEJVkFjMqJRzA0dG-MSNztVJipZsQttOe1gynSR8J_UhQ6Llz1LmxZr-NT5gBSMJSe7XuhQImGQYQag7xXVWoieB5G7BqOYJWAEIFSvNvnrjqPbDvUDfViuC3xv"/>
+</div>
+</header>
+<main class="max-w-md mx-auto px-6 py-lg">
+<!-- Search Bar Section -->
+<section class="mb-lg">
+<div class="glass-card rounded-2xl flex items-center px-md py-3 shadow-sm border border-white/40 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<span class="material-symbols-outlined text-outline mr-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-body-md placeholder:text-outline p-0" placeholder="Search categories to sell..." type="text"/>
+</div>
+</section>
+<!-- Prompt Heading -->
+<div class="mb-md">
+<h2 class="font-h3 text-h3 text-on-surface">What are you selling?</h2>
+<p class="text-on-surface-variant text-label-sm mt-xs">Select a category to start your listing</p>
+</div>
+<!-- Categories Grid -->
+<div class="grid grid-cols-2 gap-md">
+<!-- Category Card 1 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">smartphone</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Mobiles</span>
+</button>
+<!-- Category Card 2 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">directions_car</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Vehicles</span>
+</button>
+<!-- Category Card 3 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">apartment</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Property for Sale</span>
+</button>
+<!-- Category Card 4 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">key</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Property for Rent</span>
+</button>
+<!-- Category Card 5 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">kitchen</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Electronics &amp; Home Appliances</span>
+</button>
+<!-- Category Card 6 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">two_wheeler</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Bikes</span>
+</button>
+<!-- Category Card 7 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">agriculture</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Business, Industrial &amp; Agriculture</span>
+</button>
+<!-- Category Card 8 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">handyman</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Services</span>
+</button>
+<!-- Category Card 9 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">work</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Jobs</span>
+</button>
+<!-- Category Card 10 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">pets</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Animals</span>
+</button>
+<!-- Category Card 11 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">chair</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Furniture &amp; Home Decor</span>
+</button>
+<!-- Category Card 12 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">checkroom</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Fashion &amp; Beauty</span>
+</button>
+<!-- Category Card 13 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">menu_book</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Books</span>
+</button>
+<!-- Category Card 14 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">sports_tennis</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Sports &amp; Hobbies</span>
+</button>
+<!-- Category Card 15 -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">child_care</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Kids</span>
+</button>
+<!-- Category Card 16 - New Category -->
+<button class="glass-card p-md rounded-2xl flex flex-col items-center justify-center text-center gap-sm active:scale-95 transition-all duration-200 hover:shadow-md border border-white/50 group">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[32px]">more_horiz</span>
+</div>
+<span class="font-h3 text-[14px] leading-tight text-on-surface">Other</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] rounded-t-3xl">
+<div class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-all duration-300 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">home</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-all duration-300 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide">Browse</span>
+</div>
+<!-- ACTIVE TAB: Sell -->
+<div class="flex flex-col items-center justify-center text-indigo-600 scale-105 transition-all duration-300 active:scale-90 cursor-pointer">
+<div class="bg-primary/10 p-1.5 rounded-xl mb-0.5">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_box</span>
+</div>
+<span class="font-manrope text-[10px] font-bold tracking-wide">Sell</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-all duration-300 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide">Chats</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 transition-all duration-300 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-manrope text-[10px] font-semibold tracking-wide">Profile</span>
+</div>
+</nav>
+</body></html>

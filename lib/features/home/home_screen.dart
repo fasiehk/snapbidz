@@ -215,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/create-listing'),
+        onPressed: () => context.push('/create'),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
         icon: const Icon(Icons.add_rounded),
@@ -293,8 +293,8 @@ class _TrendingCard extends StatelessWidget {
   const _TrendingCard({required this.auction, required this.onTap});
 
   String _formatCurrency(int value) {
-    if (value >= 1000) return '\$${(value / 1000).toStringAsFixed(1)}k';
-    return '\$$value';
+    if (value >= 1000) return 'PKR ${(value / 1000).toStringAsFixed(1)}k';
+    return 'PKR $value';
   }
 
   Color get _timerColor {
@@ -359,24 +359,42 @@ class _TrendingCard extends StatelessWidget {
                     Text(_formatCurrency(auction.currentBid), style: AppTextStyles.priceSmall),
                   ],
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _timerColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                  Container(
+                    width: 90,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _timerColor.withAlpha(25),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.timer_outlined, size: 12, color: _timerColor),
+                            const SizedBox(width: 3),
+                            Text(_timeLeft, style: AppTextStyles.labelSmall.copyWith(color: _timerColor)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(seconds: 2),
+                          builder: (context, val, _) => LinearProgressIndicator(
+                            value: val * 0.7, // Simulated active progress
+                            backgroundColor: _timerColor.withAlpha(50),
+                            valueColor: AlwaysStoppedAnimation<Color>(_timerColor),
+                            minHeight: 3,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.timer_outlined, size: 12, color: _timerColor),
-                      const SizedBox(width: 3),
-                      Text(_timeLeft, style: AppTextStyles.labelSmall.copyWith(color: _timerColor)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
@@ -390,8 +408,8 @@ class _RecentListingCard extends StatelessWidget {
   const _RecentListingCard({required this.auction, required this.onTap});
 
   String _formatCurrency(int value) {
-    if (value >= 1000) return '\$${(value / 1000).toStringAsFixed(1)}k';
-    return '\$$value';
+    if (value >= 1000) return 'PKR ${(value / 1000).toStringAsFixed(1)}k';
+    return 'PKR $value';
   }
 
   @override
@@ -426,7 +444,26 @@ class _RecentListingCard extends StatelessWidget {
                 Text(auction.title, style: AppTextStyles.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                 Text(auction.subtitle, style: AppTextStyles.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text('Live Now', style: AppTextStyles.labelSmall.copyWith(color: AppColors.timerGreen)),
+                Row(
+                  children: [
+                    Text('Live Now', style: AppTextStyles.labelSmall.copyWith(color: AppColors.timerGreen)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(seconds: 2),
+                        builder: (context, val, _) => LinearProgressIndicator(
+                          value: val * 0.6, // Simulated active progress
+                          backgroundColor: AppColors.timerGreen.withAlpha(50),
+                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.timerGreen),
+                          minHeight: 3,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                ),
               ],
             ),
           ),

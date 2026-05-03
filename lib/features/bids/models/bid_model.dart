@@ -22,7 +22,7 @@ class BidModel {
       bidderId: map['bidderId'] ?? '',
       bidderName: map['bidderName'] ?? '',
       amount: map['amount']?.toInt() ?? 0,
-      timestamp: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : DateTime.now(),
+      timestamp: map['createdAt'] != null ? DateTime.parse(map['createdAt']).toLocal() : DateTime.now(),
     );
   }
 
@@ -32,7 +32,7 @@ class BidModel {
       'bidderId': bidderId,
       'bidderName': bidderName,
       'amount': amount,
-      'createdAt': timestamp.toIso8601String(),
+      'createdAt': timestamp.toUtc().toIso8601String(),
     };
   }
 }

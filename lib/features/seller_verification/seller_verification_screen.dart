@@ -109,7 +109,7 @@ class _SellerVerificationScreenState
         if (widget.redirectPath != null) {
           context.go(widget.redirectPath!);
         } else {
-          context.go('/create-listing');
+          context.go('/create');
         }
       }
     } catch (e) {

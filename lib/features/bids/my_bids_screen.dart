@@ -194,6 +194,47 @@ class _DynamicListingCard extends ConsumerWidget {
                       context.push('/edit-listing', extra: auction);
                     },
                   ),
+                  if (auction.status == 'active')
+                    ListTile(
+                      leading: const Icon(Icons.timer_off_outlined, color: AppColors.timerAmber),
+                      title: const Text('End Bid Now'),
+                      onTap: () async {
+                        context.pop();
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('End Bid'),
+                            content: const Text('Are you sure you want to end this auction now?'),
+                            actions: [
+                              TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancel')),
+                              TextButton(
+                                onPressed: () => ctx.pop(true), 
+                                child: const Text('End Now', style: TextStyle(color: AppColors.timerAmber)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          try {
+                            await ref.read(auctionRepositoryProvider).updateAuction(auction.id, {
+                              'status': 'ended',
+                              'endTime': DateTime.now().toIso8601String(),
+                            });
+                            ref.invalidate(myListingsProvider(auction.sellerId));
+                            ref.invalidate(allAuctionsProvider);
+                            ref.invalidate(recentAuctionsProvider);
+                            ref.invalidate(trendingAuctionsProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Auction ended successfully.')));
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                            }
+                          }
+                        }
+                      },
+                    ),
                   ListTile(
                     leading: const Icon(Icons.delete_outline, color: AppColors.error),
                     title: const Text('Delete Listing', style: TextStyle(color: AppColors.error)),
@@ -291,7 +332,7 @@ class _DynamicListingCard extends ConsumerWidget {
             const SizedBox(height: AppConstants.spaceSM),
             Row(
               children: [
-                _InfoCell(label: 'Current Bid', value: '\$${auction.currentBid}'),
+                _InfoCell(label: 'Current Bid', value: 'PKR ${auction.currentBid}'),
                 _InfoCell(label: 'Total Bids', value: '${auction.totalBids}'),
                 _InfoCell(
                   label: 'Ends', 

@@ -5,13 +5,17 @@ import '../../../core/providers/appwrite_providers.dart';
 import '../models/bid_model.dart';
 
 final bidRepositoryProvider = Provider<BidRepository>((ref) {
-  return BidRepository(ref.watch(appwriteDatabaseProvider));
+  return BidRepository(
+    ref.watch(appwriteDatabaseProvider),
+    ref.watch(appwriteRealtimeProvider),
+  );
 });
 
 class BidRepository {
   final Databases _databases;
+  final Realtime _realtime;
 
-  BidRepository(this._databases);
+  BidRepository(this._databases, this._realtime);
 
   Future<List<BidModel>> getBids({List<String>? queries}) async {
     try {
@@ -41,5 +45,11 @@ class BidRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  RealtimeSubscription subscribeToBids() {
+    return _realtime.subscribe([
+      'databases.${AppConstants.databaseId}.collections.${AppConstants.bidsCollection}.documents',
+    ]);
   }
 }

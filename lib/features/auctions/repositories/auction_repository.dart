@@ -8,14 +8,16 @@ final auctionRepositoryProvider = Provider<AuctionRepository>((ref) {
   return AuctionRepository(
     ref.watch(appwriteDatabaseProvider),
     ref.watch(appwriteStorageProvider),
+    ref.watch(appwriteRealtimeProvider),
   );
 });
 
 class AuctionRepository {
   final Databases _databases;
   final Storage _storage;
+  final Realtime _realtime;
 
-  AuctionRepository(this._databases, this._storage);
+  AuctionRepository(this._databases, this._storage, this._realtime);
 
   Future<List<AuctionModel>> getAuctions({List<String>? queries}) async {
     try {
@@ -98,5 +100,11 @@ class AuctionRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  RealtimeSubscription subscribeToAuctions() {
+    return _realtime.subscribe([
+      'databases.${AppConstants.databaseId}.collections.${AppConstants.auctionsCollection}.documents',
+    ]);
   }
 }
