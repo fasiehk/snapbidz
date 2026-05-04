@@ -5,6 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/gradient_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../auctions/controllers/auction_controller.dart';
@@ -34,9 +36,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.spaceLG),
+      body: GradientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppConstants.spaceLG),
           child: Column(
             children: [
               // ── Avatar + name ──────────────────────────────────────────────
@@ -105,7 +108,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // ── Email Verification Banner ──────────────────────────────────
               if (user != null && !user.emailVerification) ...[
                 GlassCard(
-                  color: AppColors.error.withOpacity(0.05),
+                  backgroundColor: AppColors.error.withOpacity(0.05),
                   padding: const EdgeInsets.all(AppConstants.spaceMD),
                   child: Column(
                     children: [
@@ -235,6 +238,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         );
                       },
                     ),
+              // ── Admin Panel (Only for admins) ──────────────────────────────
+              if (ref.watch(authControllerProvider.notifier).isAdmin) ...[
+                const SizedBox(height: AppConstants.spaceLG),
+                GlassCard(
+                  onTap: () => context.push('/admin'),
+                  backgroundColor: AppColors.primary.withOpacity(0.05),
+                  child: ListTile(
+                    leading: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary),
+                    title: Text('Admin Panel', style: AppTextStyles.titleSmall),
+                    subtitle: Text('Manage users and platform listings', style: AppTextStyles.bodySmall),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: AppConstants.spaceMD),
 
@@ -279,6 +296,85 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
+      ),
+    ),
+  );
+}
+
+  void _showManualVerifyDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusLG)),
+        title: Text('Enter Verification Code', style: AppTextStyles.titleLarge),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Copy the "secret" parameter from the verification link sent to your email and paste it here.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppConstants.spaceLG),
+            AppTextField(
+              label: 'Secret Code',
+              hint: 'Paste secret here...',
+              controller: controller,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final secret = controller.text.trim();
+              if (secret.isEmpty) return;
+
+              final user = ref.read(authControllerProvider).value;
+              if (user == null) return;
+
+              try {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(child: CircularProgressIndicator()),
+                );
+
+                await ref.read(authControllerProvider.notifier).verifyEmail(
+                      userId: user.$id,
+                      secret: secret,
+                    );
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Pop loading
+                  Navigator.pop(context); // Pop dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Email verified successfully!')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Pop loading
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+            ),
+            child: const Text('Verify'),
+          ),
+        ],
       ),
     );
   }

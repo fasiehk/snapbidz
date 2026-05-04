@@ -14,6 +14,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/gradient_background.dart';
 import '../../core/utils/snackbar_utils.dart';
 
 class CreateListingScreen extends ConsumerStatefulWidget {
@@ -266,17 +267,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Mesh Gradient Background
-          Positioned.fill(child: Container(color: const Color(0xFFF8F9FE))),
-          Positioned(top: -100, left: -100, child: _BlurredCircle(color: AppColors.primary.withValues(alpha: 0.12), size: 400)),
-          Positioned(bottom: -50, right: -50, child: _BlurredCircle(color: AppColors.accent.withValues(alpha: 0.08), size: 350)),
-
-          SafeArea(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
+      backgroundColor: Colors.transparent,
+      body: GradientBackground(
+        child: Stack(
+          children: [
+            SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
                 SliverAppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,
@@ -502,7 +500,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
           ),
           
           if (_isLoading) _GlobalLoadingOverlay(),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -510,24 +509,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
-class _BlurredCircle extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _BlurredCircle({required this.color, required this.size});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-        child: Container(color: Colors.transparent),
-      ),
-    );
-  }
-}
 
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;

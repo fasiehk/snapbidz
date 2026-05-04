@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/gradient_background.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
 import '../auctions/repositories/auction_repository.dart';
@@ -38,9 +39,10 @@ class _MyBidsScreenState extends ConsumerState<MyBidsScreen> with SingleTickerPr
     
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: GradientBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ──────────────────────────────────────────────────────
             Padding(
@@ -114,7 +116,8 @@ class _MyBidsScreenState extends ConsumerState<MyBidsScreen> with SingleTickerPr
                 ],
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

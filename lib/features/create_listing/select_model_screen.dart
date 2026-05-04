@@ -5,6 +5,7 @@ import '../../core/data/category_data.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/gradient_background.dart';
 
 class SelectModelScreen extends StatefulWidget {
   final String categoryName;
@@ -58,90 +59,84 @@ class _SelectModelScreenState extends State<SelectModelScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Mesh Gradient Background
-          Positioned.fill(child: Container(color: const Color(0xFFF8F9FE))),
-          Positioned(top: -100, right: -100, child: _BlurredCircle(color: AppColors.primary.withValues(alpha: 0.1), size: 400)),
-          Positioned(bottom: -100, left: -100, child: _BlurredCircle(color: AppColors.secondary.withValues(alpha: 0.05), size: 400)),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Premium AppBar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      _CircleIconButton(
-                        icon: Icons.arrow_back_rounded,
-                        onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: GradientBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Premium AppBar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    _CircleIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () => context.pop(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        widget.subCategory.name,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800),
                       ),
-                      Expanded(
-                        child: Text(
-                          widget.subCategory.name,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(width: 48), // Balance
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 48), // Balance
+                  ],
                 ),
+              ),
 
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(24),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            Text('Select Brand\nor Model', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34, height: 1.1)),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Almost there! Pick the exact model to list.',
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            // Search Bar
-                            _GlassSearchBar(
-                              controller: _searchController,
-                              onChanged: _filterModels,
-                              hint: 'Search brands...',
-                            ),
-                            const SizedBox(height: 32),
-                          ]),
-                        ),
-                      ),
-
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final model = _filteredModels[index];
-                              return _AnimatedModelTile(
-                                index: index,
-                                controller: _staggerController,
-                                model: model,
-                                categoryName: widget.categoryName,
-                                subCategoryName: widget.subCategory.name,
-                              );
-                            },
-                            childCount: _filteredModels.length,
+              Expanded(
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(24),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          Text('Select Brand\nor Model', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34, height: 1.1)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Almost there! Pick the exact model to list.',
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
                           ),
+                          const SizedBox(height: 24),
+                          
+                          // Search Bar
+                          _GlassSearchBar(
+                            controller: _searchController,
+                            onChanged: _filterModels,
+                            hint: 'Search brands...',
+                          ),
+                          const SizedBox(height: 32),
+                        ]),
+                      ),
+                    ),
+
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final model = _filteredModels[index];
+                            return _AnimatedModelTile(
+                              index: index,
+                              controller: _staggerController,
+                              model: model,
+                              categoryName: widget.categoryName,
+                              subCategoryName: widget.subCategory.name,
+                            );
+                          },
+                          childCount: _filteredModels.length,
                         ),
                       ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                    ],
-                  ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -149,24 +144,7 @@ class _SelectModelScreenState extends State<SelectModelScreen> with SingleTicker
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
-class _BlurredCircle extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _BlurredCircle({required this.color, required this.size});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
-        child: Container(color: Colors.transparent),
-      ),
-    );
-  }
-}
 
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;

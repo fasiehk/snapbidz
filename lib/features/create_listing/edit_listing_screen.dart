@@ -1,10 +1,16 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../auctions/models/auction_model.dart';
-import '../auctions/repositories/auction_repository.dart';
 import '../auctions/controllers/auction_controller.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/gradient_background.dart';
+import '../auctions/repositories/auction_repository.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 class EditListingScreen extends ConsumerStatefulWidget {
   final AuctionModel auction;
@@ -60,7 +66,7 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
 
       ref.invalidate(recentAuctionsProvider);
       ref.invalidate(trendingAuctionsProvider);
-      ref.invalidate(myListingsProvider);
+      ref.invalidate(myListingsProvider(widget.auction.sellerId));
       ref.invalidate(auctionDetailProvider(widget.auction.id));
 
       if (mounted) {
@@ -83,239 +89,166 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
     }
   }
 
-  Widget _buildGlassPanel({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: child,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GradientBackground(
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+                  onPressed: () => context.pop(),
+                ),
+                title: Text('Edit Listing', style: AppTextStyles.titleLarge),
+                centerTitle: true,
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG, vertical: AppConstants.spaceLG),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    GlassCard(
+                      padding: const EdgeInsets.all(AppConstants.spaceLG),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader(Icons.edit_note_outlined, 'Item Basics'),
+                          const SizedBox(height: AppConstants.spaceLG),
+                          AppTextField(
+                            label: 'Listing Title',
+                            hint: 'e.g. Rare 1964 Vintage Chronograph',
+                            controller: _titleController,
+                          ),
+                          const SizedBox(height: AppConstants.spaceMD),
+                          _buildInputLabel('Category'),
+                          const SizedBox(height: AppConstants.spaceSM),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(AppConstants.radiusSM),
+                              border: Border.all(color: AppColors.glassBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedCategory,
+                                dropdownColor: Colors.white.withOpacity(0.9),
+                                hint: Text('Select a category', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline)),
+                                isExpanded: true,
+                                icon: const Icon(Icons.expand_more_rounded, color: AppColors.outline),
+                                items: _categories.map((c) => DropdownMenuItem(
+                                  value: c, 
+                                  child: Text(c, style: AppTextStyles.bodyMedium)
+                                )).toList(),
+                                onChanged: (v) => setState(() => _selectedCategory = v),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spaceLG),
+                    GlassCard(
+                      padding: const EdgeInsets.all(AppConstants.spaceLG),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader(Icons.description_outlined, 'Description'),
+                          const SizedBox(height: AppConstants.spaceMD),
+                          AppTextField(
+                            label: 'Item Details',
+                            hint: 'Describe your item in detail...',
+                            controller: _descriptionController,
+                            maxLines: 5,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spaceLG),
+                    GlassCard(
+                      padding: const EdgeInsets.all(AppConstants.spaceLG),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader(Icons.payments_outlined, 'Auction Settings'),
+                          const SizedBox(height: AppConstants.spaceLG),
+                          AppTextField(
+                            label: 'Starting Price (PKR)',
+                            hint: '0.00',
+                            controller: _startingPriceController,
+                            keyboardType: TextInputType.number,
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12.0),
+                              child: Center(
+                                widthFactor: 1.0,
+                                child: Text('PKR ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.outline)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spaceXXL),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _updateListing,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+                          elevation: 0,
+                        ),
+                        child: _isLoading 
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              ) 
+                            : Text('Save Changes', style: AppTextStyles.labelLarge.copyWith(color: Colors.white, fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spaceXXL),
+                  ]),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(IconData icon, String title) {
+  Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF4648d4), size: 24),
-        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontFamily: 'Manrope',
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1b1b23),
-          ),
+          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
     );
   }
 
   Widget _buildInputLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF464554),
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, {Widget? prefixIcon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF767586), fontFamily: 'Inter'),
-      prefixIcon: prefixIcon,
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.5),
-      contentPadding: const EdgeInsets.all(16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.4)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.4)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFfcf8ff),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4648d4).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  backgroundColor: Colors.white.withOpacity(0.7),
-                  pinned: true,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1b1b23)),
-                    onPressed: () => context.pop(),
-                  ),
-                  title: const Text(
-                    'Edit Listing',
-                    style: TextStyle(
-                      fontFamily: 'Manrope',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF4648d4),
-                    ),
-                  ),
-                  centerTitle: true,
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildGlassPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.edit_note_outlined, 'Item Basics'),
-                            const SizedBox(height: 24),
-                            _buildInputLabel('Listing Title'),
-                            TextField(
-                              controller: _titleController,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('e.g. Rare 1964 Vintage Chronograph'),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInputLabel('Category'),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.white.withOpacity(0.4)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _selectedCategory,
-                                  hint: const Text('Select a category', style: TextStyle(color: Color(0xFF767586), fontFamily: 'Inter')),
-                                  isExpanded: true,
-                                  icon: const Icon(Icons.expand_more_rounded, color: Color(0xFF767586)),
-                                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontFamily: 'Inter', color: Color(0xFF1b1b23))))).toList(),
-                                  onChanged: (v) => setState(() => _selectedCategory = v),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildGlassPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.description_outlined, 'Description'),
-                            const SizedBox(height: 16),
-                            _buildInputLabel('Item Details'),
-                            TextField(
-                              controller: _descriptionController,
-                              maxLines: 5,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('Describe your item in detail...'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildGlassPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionTitle(Icons.payments_outlined, 'Auction Settings'),
-                            const SizedBox(height: 24),
-                            _buildInputLabel('Starting Price (PKR)'),
-                            TextField(
-                              controller: _startingPriceController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 16, color: Color(0xFF1b1b23)),
-                              decoration: _inputDecoration('0.00', prefixIcon: const Padding(
-                                padding: EdgeInsets.only(left: 16.0, right: 8.0),
-                                child: Text('PKR ', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF767586))),
-                              )).copyWith(prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _updateListing,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4648d4),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 8,
-                          ),
-                          child: _isLoading 
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                ) 
-                              : const Text('Save Changes', style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600)),
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return Text(
+      label,
+      style: AppTextStyles.labelMedium.copyWith(color: AppColors.onSurfaceVariant),
     );
   }
 }

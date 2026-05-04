@@ -15,6 +15,12 @@ class AuthController extends StateNotifier<AsyncValue<models.User?>> {
     checkSession();
   }
 
+  bool get isAdmin {
+    final user = state.value;
+    if (user == null) return false;
+    return user.labels.contains('admin');
+  }
+
   /// Checks if the user is already logged in on startup
   Future<void> checkSession() async {
     try {

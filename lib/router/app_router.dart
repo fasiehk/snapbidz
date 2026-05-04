@@ -23,6 +23,10 @@ import '../core/data/category_data.dart';
 import '../features/create_listing/edit_listing_screen.dart';
 import '../features/main/main_shell.dart';
 import '../features/seller_verification/seller_verification_screen.dart';
+import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/admin/screens/manage_users_screen.dart';
+import '../features/admin/screens/manage_auctions_screen.dart';
+import '../features/admin/screens/admin_shell.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +98,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/edit-profile',
             builder: (context, state) => const EditProfileScreen(),
+          ),
+        ],
+      ),
+      // Admin Panel Routes with dedicated Shell (Sidebar)
+      ShellRoute(
+        builder: (context, state, child) => AdminShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/admin',
+            builder: (context, state) => const AdminDashboardContent(),
+          ),
+          GoRoute(
+            path: '/admin/users',
+            builder: (context, state) => const ManageUsersScreen(),
+          ),
+          GoRoute(
+            path: '/admin/auctions',
+            builder: (context, state) => const ManageAuctionsScreen(),
           ),
         ],
       ),

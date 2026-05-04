@@ -25,6 +25,9 @@ class AppTheme {
         error: AppColors.error,
         onError: AppColors.onError,
       ),
+      splashColor: AppColors.primary.withOpacity(0.05),
+      highlightColor: Colors.transparent,
+      hoverColor: AppColors.primary.withOpacity(0.02),
       textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: GoogleFonts.manrope(
           fontSize: 48, fontWeight: FontWeight.w700, color: AppColors.onSurface,
