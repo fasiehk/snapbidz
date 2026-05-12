@@ -56,79 +56,84 @@ class _SelectSubCategoryScreenState extends State<SelectSubCategoryScreen> with 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GradientBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Premium AppBar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    _CircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      onTap: () => context.pop(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        widget.category.name,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    const SizedBox(width: 48), // Balance
-                  ],
-                ),
-              ),
-
-              Expanded(
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.all(24),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          Text('Select\nSubcategory', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34, height: 1.1)),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Narrow down your listing to the right audience.',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Search Bar
-                          _GlassSearchBar(
-                            controller: _searchController,
-                            onChanged: _filterSubCategories,
-                            hint: 'Search in ${widget.category.name}...',
-                          ),
-                          const SizedBox(height: 32),
-                        ]),
-                      ),
-                    ),
-
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final subCategory = _filteredSubCategories[index];
-                            return _AnimatedSubCategoryTile(
-                              index: index,
-                              controller: _staggerController,
-                              subCategory: subCategory,
-                              categoryName: widget.category.name,
-                            );
-                          },
-                          childCount: _filteredSubCategories.length,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Premium AppBar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        _CircleIconButton(
+                          icon: Icons.arrow_back_rounded,
+                          onTap: () => context.pop(),
                         ),
-                      ),
+                        Expanded(
+                          child: Text(
+                            widget.category.name,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        const SizedBox(width: 48), // Balance
+                      ],
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                  ],
-                ),
+                  ),
+
+                  Expanded(
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.all(24),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              Text('Select\nSubcategory', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34, height: 1.1)),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Narrow down your listing to the right audience.',
+                                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              // Search Bar
+                              _GlassSearchBar(
+                                controller: _searchController,
+                                onChanged: _filterSubCategories,
+                                hint: 'Search in ${widget.category.name}...',
+                              ),
+                              const SizedBox(height: 32),
+                            ]),
+                          ),
+                        ),
+
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final subCategory = _filteredSubCategories[index];
+                                return _AnimatedSubCategoryTile(
+                                  index: index,
+                                  controller: _staggerController,
+                                  subCategory: subCategory,
+                                  categoryName: widget.category.name,
+                                );
+                              },
+                              childCount: _filteredSubCategories.length,
+                            ),
+                          ),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

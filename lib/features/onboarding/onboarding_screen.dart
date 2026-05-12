@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/app_buttons.dart';
 import '../../core/widgets/glass_card.dart';
@@ -64,101 +65,112 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = AppBreakpoints.isDesktop(context);
+
+    final content = Column(
+      children: [
+        // ── Skip Button ───────────────────────────────────────────────
+        Align(
+          alignment: Alignment.topRight,
+          child: TextButton(
+            onPressed: () => context.go('/login'),
+            child: Text(
+              'Skip',
+              style: AppTextStyles.labelLarge.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+
+        // ── Page View ─────────────────────────────────────────────────
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentPage = index),
+            itemCount: _pages.length,
+            itemBuilder: (context, index) {
+              return _OnboardingPage(data: _pages[index]);
+            },
+          ),
+        ),
+
+        // ── Dot Indicators ────────────────────────────────────────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _pages.length,
+            (index) => AnimatedContainer(
+              duration: AppConstants.animFast,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _currentPage == index ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _currentPage == index
+                    ? AppColors.primary
+                    : AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppConstants.spaceXL),
+
+        // ── CTA Button ────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
+          child: PrimaryButton(
+            label: _currentPage == _pages.length - 1
+                ? 'Get Started'
+                : 'Continue',
+            icon: _currentPage == _pages.length - 1
+                ? Icons.arrow_forward_rounded
+                : null,
+            onPressed: _nextPage,
+          ),
+        ),
+
+        const SizedBox(height: AppConstants.spaceMD),
+
+        // ── Login link ────────────────────────────────────────────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Already have an account? ',
+              style: AppTextStyles.bodySmall,
+            ),
+            GestureDetector(
+              onTap: () => context.go('/login'),
+              child: Text(
+                'Sign In',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: AppConstants.spaceLG),
+      ],
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GradientBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Skip Button ───────────────────────────────────────────────
-              Align(
-                alignment: Alignment.topRight,
-                child: TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: Text(
-                    'Skip',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
+        child: isDesktop
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: content,
                 ),
+              )
+            : SafeArea(
+                child: content,
               ),
-
-              // ── Page View ─────────────────────────────────────────────────
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) => setState(() => _currentPage = index),
-                  itemCount: _pages.length,
-                  itemBuilder: (context, index) {
-                    return _OnboardingPage(data: _pages[index]);
-                  },
-                ),
-              ),
-
-              // ── Dot Indicators ────────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _pages.length,
-                  (index) => AnimatedContainer(
-                    duration: AppConstants.animFast,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _currentPage == index ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? AppColors.primary
-                          : AppColors.outlineVariant,
-                      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceXL),
-
-              // ── CTA Button ────────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG),
-                child: PrimaryButton(
-                  label: _currentPage == _pages.length - 1
-                      ? 'Get Started'
-                      : 'Continue',
-                  icon: _currentPage == _pages.length - 1
-                      ? Icons.arrow_forward_rounded
-                      : null,
-                  onPressed: _nextPage,
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.spaceMD),
-
-              // ── Login link ────────────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account? ',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                  GestureDetector(
-                    onTap: () => context.go('/login'),
-                    child: Text(
-                      'Sign In',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: AppConstants.spaceLG),
-            ],
-          ),
-        ),
       ),
     );
   }

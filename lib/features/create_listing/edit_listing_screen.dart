@@ -94,131 +94,136 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GradientBackground(
-        child: SafeArea(
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
-                  onPressed: () => context.pop(),
-                ),
-                title: Text('Edit Listing', style: AppTextStyles.titleLarge),
-                centerTitle: true,
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG, vertical: AppConstants.spaceLG),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    GlassCard(
-                      padding: const EdgeInsets.all(AppConstants.spaceLG),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(Icons.edit_note_outlined, 'Item Basics'),
-                          const SizedBox(height: AppConstants.spaceLG),
-                          AppTextField(
-                            label: 'Listing Title',
-                            hint: 'e.g. Rare 1964 Vintage Chronograph',
-                            controller: _titleController,
-                          ),
-                          const SizedBox(height: AppConstants.spaceMD),
-                          _buildInputLabel('Category'),
-                          const SizedBox(height: AppConstants.spaceSM),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(AppConstants.radiusSM),
-                              border: Border.all(color: AppColors.glassBorder),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedCategory,
-                                dropdownColor: Colors.white.withOpacity(0.9),
-                                hint: Text('Select a category', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline)),
-                                isExpanded: true,
-                                icon: const Icon(Icons.expand_more_rounded, color: AppColors.outline),
-                                items: _categories.map((c) => DropdownMenuItem(
-                                  value: c, 
-                                  child: Text(c, style: AppTextStyles.bodyMedium)
-                                )).toList(),
-                                onChanged: (v) => setState(() => _selectedCategory = v),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  SliverAppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+                      onPressed: () => context.pop(),
+                    ),
+                    title: Text('Edit Listing', style: AppTextStyles.titleLarge),
+                    centerTitle: true,
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceLG, vertical: AppConstants.spaceLG),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        GlassCard(
+                          padding: const EdgeInsets.all(AppConstants.spaceLG),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.edit_note_outlined, 'Item Basics'),
+                              const SizedBox(height: AppConstants.spaceLG),
+                              AppTextField(
+                                label: 'Listing Title',
+                                hint: 'e.g. Rare 1964 Vintage Chronograph',
+                                controller: _titleController,
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spaceLG),
-                    GlassCard(
-                      padding: const EdgeInsets.all(AppConstants.spaceLG),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(Icons.description_outlined, 'Description'),
-                          const SizedBox(height: AppConstants.spaceMD),
-                          AppTextField(
-                            label: 'Item Details',
-                            hint: 'Describe your item in detail...',
-                            controller: _descriptionController,
-                            maxLines: 5,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spaceLG),
-                    GlassCard(
-                      padding: const EdgeInsets.all(AppConstants.spaceLG),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(Icons.payments_outlined, 'Auction Settings'),
-                          const SizedBox(height: AppConstants.spaceLG),
-                          AppTextField(
-                            label: 'Starting Price (PKR)',
-                            hint: '0.00',
-                            controller: _startingPriceController,
-                            keyboardType: TextInputType.number,
-                            prefixIcon: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12.0),
-                              child: Center(
-                                widthFactor: 1.0,
-                                child: Text('PKR ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.outline)),
+                              const SizedBox(height: AppConstants.spaceMD),
+                              _buildInputLabel('Category'),
+                              const SizedBox(height: AppConstants.spaceSM),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spaceMD),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(AppConstants.radiusSM),
+                                  border: Border.all(color: AppColors.glassBorder),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedCategory,
+                                    dropdownColor: Colors.white.withOpacity(0.9),
+                                    hint: Text('Select a category', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline)),
+                                    isExpanded: true,
+                                    icon: const Icon(Icons.expand_more_rounded, color: AppColors.outline),
+                                    items: _categories.map((c) => DropdownMenuItem(
+                                      value: c, 
+                                      child: Text(c, style: AppTextStyles.bodyMedium)
+                                    )).toList(),
+                                    onChanged: (v) => setState(() => _selectedCategory = v),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spaceXXL),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _updateListing,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
-                          elevation: 0,
                         ),
-                        child: _isLoading 
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              ) 
-                            : Text('Save Changes', style: AppTextStyles.labelLarge.copyWith(color: Colors.white, fontSize: 16)),
-                      ),
+                        const SizedBox(height: AppConstants.spaceLG),
+                        GlassCard(
+                          padding: const EdgeInsets.all(AppConstants.spaceLG),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.description_outlined, 'Description'),
+                              const SizedBox(height: AppConstants.spaceMD),
+                              AppTextField(
+                                label: 'Item Details',
+                                hint: 'Describe your item in detail...',
+                                controller: _descriptionController,
+                                maxLines: 5,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spaceLG),
+                        GlassCard(
+                          padding: const EdgeInsets.all(AppConstants.spaceLG),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(Icons.payments_outlined, 'Auction Settings'),
+                              const SizedBox(height: AppConstants.spaceLG),
+                              AppTextField(
+                                label: 'Starting Price (PKR)',
+                                hint: '0.00',
+                                controller: _startingPriceController,
+                                keyboardType: TextInputType.number,
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.0),
+                                  child: Center(
+                                    widthFactor: 1.0,
+                                    child: Text('PKR ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.outline)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spaceXXL),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _updateListing,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusMD)),
+                              elevation: 0,
+                            ),
+                            child: _isLoading 
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  ) 
+                                : Text('Save Changes', style: AppTextStyles.labelLarge.copyWith(color: Colors.white, fontSize: 16)),
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spaceXXL),
+                      ]),
                     ),
-                    const SizedBox(height: AppConstants.spaceXXL),
-                  ]),
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

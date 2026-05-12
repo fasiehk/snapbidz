@@ -73,138 +73,143 @@ class _TechDetailsScreenState extends State<TechDetailsScreen> with SingleTicker
           Positioned.fill(child: Container(color: const Color(0xFFF8F9FE))),
           Positioned(top: -100, left: -100, child: _BlurredCircle(color: AppColors.secondary.withValues(alpha: 0.1), size: 400)),
           
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      _CircleIconButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text('Step 4 of 5', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                            Text('Technical Specs', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800)),
-                          ],
-                        ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          _CircleIconButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text('Step 4 of 5', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                Text('Technical Specs', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
                       ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
+                    ),
 
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(24),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            _AnimatedSection(
-                              index: 0,
-                              controller: _staggerController,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Tech Specs', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
-                                  const SizedBox(height: 8),
-                                  Text('Specify the technical configuration of your ${widget.model ?? widget.subCategory}.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-
-                            // Storage & RAM
-                            _AnimatedSection(
-                              index: 1,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  children: [
-                                    AppTextField(
-                                      label: 'Storage Capacity',
-                                      hint: 'e.g. 256GB, 1TB',
-                                      controller: _storageController,
-                                      prefixIcon: const Icon(Icons.storage_rounded, size: 20),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    AppTextField(
-                                      label: 'RAM',
-                                      hint: 'e.g. 8GB, 16GB',
-                                      controller: _ramController,
-                                      prefixIcon: const Icon(Icons.memory_rounded, size: 20),
-                                    ),
-                                  ],
+                    Expanded(
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.all(24),
+                            sliver: SliverList(
+                              delegate: SliverChildListDelegate([
+                                _AnimatedSection(
+                                  index: 0,
+                                  controller: _staggerController,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Tech Specs', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
+                                      const SizedBox(height: 8),
+                                      Text('Specify the technical configuration of your ${widget.model ?? widget.subCategory}.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+                                const SizedBox(height: 32),
 
-                            // Condition
-                            _AnimatedSection(
-                              index: 2,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel('Condition'),
-                                    const SizedBox(height: 12),
-                                    _buildSegmentedControl(
-                                      options: ['New', 'Open Box', 'Used', 'Refurbished'],
-                                      selected: _condition,
-                                      onChanged: (val) => setState(() => _condition = val),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Warranty
-                            _AnimatedSection(
-                              index: 3,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                // Storage & RAM
+                                _AnimatedSection(
+                                  index: 1,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
                                       children: [
-                                        _buildLabel('Under Warranty'),
-                                        Text('Does it have a valid warranty?', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                                        AppTextField(
+                                          label: 'Storage Capacity',
+                                          hint: 'e.g. 256GB, 1TB',
+                                          controller: _storageController,
+                                          prefixIcon: const Icon(Icons.storage_rounded, size: 20),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        AppTextField(
+                                          label: 'RAM',
+                                          hint: 'e.g. 8GB, 16GB',
+                                          controller: _ramController,
+                                          prefixIcon: const Icon(Icons.memory_rounded, size: 20),
+                                        ),
                                       ],
                                     ),
-                                    Switch.adaptive(
-                                      value: _hasWarranty,
-                                      activeColor: AppColors.primary,
-                                      onChanged: (val) => setState(() => _hasWarranty = val),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
+                                const SizedBox(height: 24),
 
-                            _AnimatedSection(
-                              index: 4,
-                              controller: _staggerController,
-                              child: _SubmitButton(title: 'Continue', onTap: _onContinue),
+                                // Condition
+                                _AnimatedSection(
+                                  index: 2,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Condition'),
+                                        const SizedBox(height: 12),
+                                        _buildSegmentedControl(
+                                          options: ['New', 'Open Box', 'Used', 'Refurbished'],
+                                          selected: _condition,
+                                          onChanged: (val) => setState(() => _condition = val),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Warranty
+                                _AnimatedSection(
+                                  index: 3,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildLabel('Under Warranty'),
+                                            Text('Does it have a valid warranty?', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                                          ],
+                                        ),
+                                        Switch.adaptive(
+                                          value: _hasWarranty,
+                                          activeColor: AppColors.primary,
+                                          onChanged: (val) => setState(() => _hasWarranty = val),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                _AnimatedSection(
+                                  index: 4,
+                                  controller: _staggerController,
+                                  child: _SubmitButton(title: 'Continue', onTap: _onContinue),
+                                ),
+                                const SizedBox(height: 40),
+                              ]),
                             ),
-                            const SizedBox(height: 40),
-                          ]),
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],

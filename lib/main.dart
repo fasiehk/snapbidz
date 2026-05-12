@@ -7,11 +7,8 @@ import 'router/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait orientation
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // Portrait lock removed — app is now fully responsive across
+  // mobile, tablet, and desktop/web window sizes.
 
   // Set transparent status bar
   SystemChrome.setSystemUIOverlayStyle(
@@ -30,7 +27,7 @@ class SnapBidApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goRouter = ref.watch(routerProvider);
-    
+
     return MaterialApp.router(
       title: 'SnapBid',
       debugShowCheckedModeBanner: false,

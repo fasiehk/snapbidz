@@ -75,143 +75,148 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
           Positioned.fill(child: Container(color: const Color(0xFFF8F9FE))),
           Positioned(top: -100, right: -100, child: _BlurredCircle(color: AppColors.primary.withValues(alpha: 0.1), size: 400)),
           
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      _CircleIconButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text('Step 4 of 5', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                            Text('Vehicle Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800)),
-                          ],
-                        ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          _CircleIconButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text('Step 4 of 5', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                Text('Vehicle Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
                       ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
+                    ),
 
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(24),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            _AnimatedSection(
-                              index: 0,
-                              controller: _staggerController,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Vehicle Info', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
-                                  const SizedBox(height: 8),
-                                  Text('Provide specifications for your ${widget.model ?? widget.subCategory}.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-
-                            // Year & Mileage
-                            _AnimatedSection(
-                              index: 1,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  children: [
-                                    AppTextField(
-                                      label: 'Registration Year',
-                                      hint: 'e.g. 2022',
-                                      controller: _yearController,
-                                      keyboardType: TextInputType.number,
-                                      prefixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    AppTextField(
-                                      label: 'Mileage (KM)',
-                                      hint: 'e.g. 45000',
-                                      controller: _mileageController,
-                                      keyboardType: TextInputType.number,
-                                      prefixIcon: const Icon(Icons.speed_rounded, size: 20),
-                                    ),
-                                  ],
+                    Expanded(
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.all(24),
+                            sliver: SliverList(
+                              delegate: SliverChildListDelegate([
+                                _AnimatedSection(
+                                  index: 0,
+                                  controller: _staggerController,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Vehicle Info', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
+                                      const SizedBox(height: 8),
+                                      Text('Provide specifications for your ${widget.model ?? widget.subCategory}.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+                                const SizedBox(height: 32),
 
-                            // Transmission & Fuel
-                            _AnimatedSection(
-                              index: 2,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel('Transmission'),
-                                    const SizedBox(height: 12),
-                                    _buildSegmentedControl(
-                                      options: ['Manual', 'Automatic'],
-                                      selected: _transmission,
-                                      onChanged: (val) => setState(() => _transmission = val),
+                                // Year & Mileage
+                                _AnimatedSection(
+                                  index: 1,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      children: [
+                                        AppTextField(
+                                          label: 'Registration Year',
+                                          hint: 'e.g. 2022',
+                                          controller: _yearController,
+                                          keyboardType: TextInputType.number,
+                                          prefixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        AppTextField(
+                                          label: 'Mileage (KM)',
+                                          hint: 'e.g. 45000',
+                                          controller: _mileageController,
+                                          keyboardType: TextInputType.number,
+                                          prefixIcon: const Icon(Icons.speed_rounded, size: 20),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 24),
-                                    _buildLabel('Fuel Type'),
-                                    const SizedBox(height: 12),
-                                    _buildSegmentedControl(
-                                      options: ['Petrol', 'Diesel', 'Hybrid', 'Electric'],
-                                      selected: _fuelType,
-                                      onChanged: (val) => setState(() => _fuelType = val),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+                                const SizedBox(height: 24),
 
-                            // Condition
-                            _AnimatedSection(
-                              index: 3,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel('Condition'),
-                                    const SizedBox(height: 12),
-                                    _buildSegmentedControl(
-                                      options: ['New', 'Used', 'Certified Pre-Owned'],
-                                      selected: _condition,
-                                      onChanged: (val) => setState(() => _condition = val),
+                                // Transmission & Fuel
+                                _AnimatedSection(
+                                  index: 2,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Transmission'),
+                                        const SizedBox(height: 12),
+                                        _buildSegmentedControl(
+                                          options: ['Manual', 'Automatic'],
+                                          selected: _transmission,
+                                          onChanged: (val) => setState(() => _transmission = val),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        _buildLabel('Fuel Type'),
+                                        const SizedBox(height: 12),
+                                        _buildSegmentedControl(
+                                          options: ['Petrol', 'Diesel', 'Hybrid', 'Electric'],
+                                          selected: _fuelType,
+                                          onChanged: (val) => setState(() => _fuelType = val),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
+                                const SizedBox(height: 24),
 
-                            _AnimatedSection(
-                              index: 4,
-                              controller: _staggerController,
-                              child: _SubmitButton(title: 'Continue', onTap: _onContinue),
+                                // Condition
+                                _AnimatedSection(
+                                  index: 3,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Condition'),
+                                        const SizedBox(height: 12),
+                                        _buildSegmentedControl(
+                                          options: ['New', 'Used', 'Certified Pre-Owned'],
+                                          selected: _condition,
+                                          onChanged: (val) => setState(() => _condition = val),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                _AnimatedSection(
+                                  index: 4,
+                                  controller: _staggerController,
+                                  child: _SubmitButton(title: 'Continue', onTap: _onContinue),
+                                ),
+                                const SizedBox(height: 40),
+                              ]),
                             ),
-                            const SizedBox(height: 40),
-                          ]),
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],

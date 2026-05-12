@@ -54,8 +54,11 @@ class _SelectCategoryScreenState extends ConsumerState<SelectCategoryScreen> wit
       backgroundColor: Colors.transparent,
       body: GradientBackground(
         child: SafeArea(
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
             slivers: [
               // ── Premium Header ──────────────────────────────────────────
               SliverToBoxAdapter(
@@ -139,10 +142,12 @@ class _SelectCategoryScreenState extends ConsumerState<SelectCategoryScreen> wit
                   ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    ),
     );
   }
 }

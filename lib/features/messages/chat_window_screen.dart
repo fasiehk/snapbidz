@@ -16,6 +16,7 @@ class ChatWindowScreen extends ConsumerStatefulWidget {
   final String otherUserName;
   final String currentBid;
   final String? auctionImage;
+  final bool isEmbedded;
 
   const ChatWindowScreen({
     super.key,
@@ -25,6 +26,7 @@ class ChatWindowScreen extends ConsumerStatefulWidget {
     required this.otherUserName,
     this.currentBid = '',
     this.auctionImage,
+    this.isEmbedded = false,
   });
 
   @override
@@ -224,7 +226,8 @@ class _ChatWindowScreenState extends ConsumerState<ChatWindowScreen> {
       backgroundColor: Colors.white.withAlpha(230),
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      leading: IconButton(
+      automaticallyImplyLeading: !widget.isEmbedded,
+      leading: widget.isEmbedded ? null : IconButton(
         icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
         onPressed: () => Navigator.pop(context),
       ),

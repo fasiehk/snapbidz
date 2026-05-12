@@ -77,192 +77,197 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> with Sing
           Positioned(top: -100, right: -100, child: _BlurredCircle(color: AppColors.primary.withValues(alpha: 0.1), size: 400)),
           Positioned(bottom: -100, left: -100, child: _BlurredCircle(color: AppColors.secondary.withValues(alpha: 0.05), size: 400)),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // Premium AppBar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      _CircleIconButton(
-                        icon: Icons.arrow_back_rounded,
-                        onTap: () => context.pop(),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Premium AppBar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          _CircleIconButton(
+                            icon: Icons.arrow_back_rounded,
+                            onTap: () => context.pop(),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Step 3 of 5',
+                                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Property Details',
+                                  style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
                       ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              'Step 3 of 5',
-                              style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'Property Details',
-                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
+                    ),
 
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(24),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            _AnimatedSection(
-                              index: 0,
-                              controller: _staggerController,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Nearly there!', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Fill in the specific details for your ${widget.subCategory}.',
-                                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-
-                            // Area Section
-                            _AnimatedSection(
-                              index: 1,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildSectionHeader(Icons.square_foot_rounded, 'Total Area'),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      label: 'Area Size',
-                                      hint: 'Enter area size',
-                                      controller: _areaController,
-                                      keyboardType: TextInputType.number,
-                                      suffixIcon: Padding(
-                                        padding: const EdgeInsets.only(right: 12, top: 14),
-                                        child: Text('Marla', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline)),
+                    Expanded(
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.all(24),
+                            sliver: SliverList(
+                              delegate: SliverChildListDelegate([
+                                _AnimatedSection(
+                                  index: 0,
+                                  controller: _staggerController,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Nearly there!', style: AppTextStyles.headlineLarge.copyWith(fontSize: 34)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Fill in the specific details for your ${widget.subCategory}.',
+                                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+                                const SizedBox(height: 32),
 
-                            // Bedrooms & Bathrooms
-                            _AnimatedSection(
-                              index: 2,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildSectionHeader(Icons.bed_rounded, 'Bedrooms'),
-                                    const SizedBox(height: 12),
-                                    _buildChipSelector(
-                                      count: 6,
-                                      selectedValue: _selectedBedrooms,
-                                      onSelected: (val) => setState(() => _selectedBedrooms = val),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    _buildSectionHeader(Icons.bathtub_rounded, 'Bathrooms'),
-                                    const SizedBox(height: 12),
-                                    _buildChipSelector(
-                                      count: 6,
-                                      selectedValue: _selectedBathrooms,
-                                      onSelected: (val) => setState(() => _selectedBathrooms = val),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Furnished & Status
-                            _AnimatedSection(
-                              index: 3,
-                              controller: _staggerController,
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                // Area Section
+                                _AnimatedSection(
+                                  index: 1,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        _buildSectionHeader(Icons.square_foot_rounded, 'Total Area'),
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          label: 'Area Size',
+                                          hint: 'Enter area size',
+                                          controller: _areaController,
+                                          keyboardType: TextInputType.number,
+                                          suffixIcon: Padding(
+                                            padding: const EdgeInsets.only(right: 12, top: 14),
+                                            child: Text('Marla', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Bedrooms & Bathrooms
+                                _AnimatedSection(
+                                  index: 2,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildSectionHeader(Icons.bed_rounded, 'Bedrooms'),
+                                        const SizedBox(height: 12),
+                                        _buildChipSelector(
+                                          count: 6,
+                                          selectedValue: _selectedBedrooms,
+                                          onSelected: (val) => setState(() => _selectedBedrooms = val),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        _buildSectionHeader(Icons.bathtub_rounded, 'Bathrooms'),
+                                        const SizedBox(height: 12),
+                                        _buildChipSelector(
+                                          count: 6,
+                                          selectedValue: _selectedBathrooms,
+                                          onSelected: (val) => setState(() => _selectedBathrooms = val),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Furnished & Status
+                                _AnimatedSection(
+                                  index: 3,
+                                  controller: _staggerController,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text('Furnished', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                                            Text('Is the property move-in ready?', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Furnished', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                                Text('Is the property move-in ready?', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                                              ],
+                                            ),
+                                            Switch.adaptive(
+                                              value: _isFurnished,
+                                              activeColor: AppColors.primary,
+                                              onChanged: (val) => setState(() => _isFurnished = val),
+                                            ),
                                           ],
                                         ),
-                                        Switch.adaptive(
-                                          value: _isFurnished,
-                                          activeColor: AppColors.primary,
-                                          onChanged: (val) => setState(() => _isFurnished = val),
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 20),
+                                          child: Divider(height: 1),
+                                        ),
+                                        Text('Construction Status', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _StatusCard(
+                                                title: 'Ready',
+                                                isSelected: _constructionStatus == 'Ready',
+                                                onTap: () => setState(() => _constructionStatus = 'Ready'),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: _StatusCard(
+                                                title: 'Under Construction',
+                                                isSelected: _constructionStatus == 'Under Construction',
+                                                onTap: () => setState(() => _constructionStatus = 'Under Construction'),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 20),
-                                      child: Divider(height: 1),
-                                    ),
-                                    Text('Construction Status', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _StatusCard(
-                                            title: 'Ready',
-                                            isSelected: _constructionStatus == 'Ready',
-                                            onTap: () => setState(() => _constructionStatus = 'Ready'),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _StatusCard(
-                                            title: 'Under Construction',
-                                            isSelected: _constructionStatus == 'Under Construction',
-                                            onTap: () => setState(() => _constructionStatus = 'Under Construction'),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
+                                const SizedBox(height: 40),
 
-                            _AnimatedSection(
-                              index: 4,
-                              controller: _staggerController,
-                              child: _SubmitButton(
-                                title: 'Continue',
-                                onTap: _onContinue,
-                              ),
+                                _AnimatedSection(
+                                  index: 4,
+                                  controller: _staggerController,
+                                  child: _SubmitButton(
+                                    title: 'Continue',
+                                    onTap: _onContinue,
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+                              ]),
                             ),
-                            const SizedBox(height: 40),
-                          ]),
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],

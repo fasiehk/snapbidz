@@ -272,8 +272,11 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
         child: Stack(
           children: [
             SafeArea(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
                 slivers: [
                 SliverAppBar(
                   backgroundColor: Colors.transparent,
@@ -495,9 +498,11 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> with 
                     ]),
                   ),
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
           
           if (_isLoading) _GlobalLoadingOverlay(),
           ],

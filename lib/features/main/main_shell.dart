@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../messages/controllers/chat_controller.dart';
+import 'desktop_shell.dart';
 
-/// Bottom navigation shell wrapping all main tab screens.
+/// Adaptive navigation shell.
+///
+/// • Mobile  (< 600 px) → GradientBackground + bottom navigation bar
+/// • Desktop (≥ 600 px) → [DesktopShell] with sidebar
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
   const MainShell({super.key, required this.child});
@@ -20,7 +25,6 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
-    // Start unread badge listening once we know the user
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authControllerProvider).value;
       if (user != null) {
@@ -31,18 +35,24 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/browse')) return 1;
+    if (location.startsWith('/home'))      return 0;
+    if (location.startsWith('/browse'))    return 1;
     if (location.startsWith('/watchlist')) return 2;
-    if (location.startsWith('/messages')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/messages'))  return 3;
+    if (location.startsWith('/profile'))   return 4;
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
+    // On desktop delegate entirely to the sidebar shell
+    if (AppBreakpoints.isDesktop(context)) {
+      return DesktopShell(child: widget.child);
+    }
+
+    // ── Mobile: bottom navigation ──────────────────────────────────────────
     final selectedIndex = _selectedIndex(context);
-    final unreadCount = ref.watch(unreadCountProvider);
+    final unreadCount   = ref.watch(unreadCountProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -117,6 +127,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 }
 
+// ── Nav Item ───────────────────────────────────────────────────────────────────
+
 class _NavItem extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -166,8 +178,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color:
-                    isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
               ),
             ),
           ],
@@ -177,7 +188,8 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-/// Nav item with a notification badge dot/count
+// ── Nav Item with Badge ────────────────────────────────────────────────────────
+
 class _NavItemWithBadge extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -241,7 +253,8 @@ class _NavItemWithBadge extends StatelessWidget {
                               const EdgeInsets.symmetric(horizontal: 3),
                           decoration: const BoxDecoration(
                             color: AppColors.accent,
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(8)),
                           ),
                           child: Center(
                             child: Text(
@@ -265,8 +278,7 @@ class _NavItemWithBadge extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color:
-                    isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
               ),
             ),
           ],

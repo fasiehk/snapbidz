@@ -5,6 +5,7 @@ import 'package:appwrite/appwrite.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/widgets/glass_card.dart';
 import '../auctions/controllers/auction_controller.dart';
 import '../auctions/models/auction_model.dart';
@@ -353,7 +354,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
             final bodyDisplayCurrentBid = actualHighestBid;
             final bodyDisplayTotalBids = actualTotalBids;
             
-            return CustomScrollView(
+            final scrollView = CustomScrollView(
               slivers: [
                 // ── Hero Image ───────────────────────────────────────────────────
                 SliverAppBar(
@@ -710,89 +711,111 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                 ),
               ],
             );
+
+            return AppBreakpoints.isDesktop(context)
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: scrollView,
+                    ),
+                  )
+                : scrollView;
           },
         ),
       ),
-      bottomNavigationBar: auctionAsync.hasValue ? Container(
-        padding: EdgeInsets.fromLTRB(
-          AppConstants.spaceLG, AppConstants.spaceMD,
-          AppConstants.spaceLG, AppConstants.spaceMD + MediaQuery.of(context).padding.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(230),
-          border: Border(top: BorderSide(color: AppColors.outlineVariant.withAlpha(60))),
-        ),
-        child: Builder(builder: (context) {
-          final auction = auctionAsync.value!;
-          final user = ref.watch(authControllerProvider).value;
-          final isSeller = user != null && user.$id == auction.sellerId;
+      bottomNavigationBar: auctionAsync.hasValue ? Builder(builder: (context) {
+        final auction = auctionAsync.value!;
+        final user = ref.watch(authControllerProvider).value;
+        final isSeller = user != null && user.$id == auction.sellerId;
 
-          if (isSeller) {
+        final navBarContent = Container(
+          padding: EdgeInsets.fromLTRB(
+            AppConstants.spaceLG, AppConstants.spaceMD,
+            AppConstants.spaceLG, AppConstants.spaceMD + MediaQuery.of(context).padding.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha(230),
+            border: Border(top: BorderSide(color: AppColors.outlineVariant.withAlpha(60))),
+          ),
+          child: Builder(builder: (context) {
+            if (isSeller) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.stars_rounded, color: AppColors.primary, size: 24),
+                  const SizedBox(width: AppConstants.spaceSM),
+                  Text('This is your listing', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
+                ],
+              );
+            }
+
             return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.stars_rounded, color: AppColors.primary, size: 24),
-                const SizedBox(width: AppConstants.spaceSM),
-                Text('This is your listing', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
+                // Message Seller button
+                Padding(
+                  padding: const EdgeInsets.only(right: AppConstants.spaceSM),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _messageSeller(auction),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                    label: const Text('Chat'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Minimum next bid', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
+                      Text('PKR ${displayCurrentBid + 100}', style: AppTextStyles.priceMedium),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppConstants.spaceMD),
+                SizedBox(
+                  height: 52,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusSM),
+                      boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 14, offset: const Offset(0, 6))],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showBidDialog(auction, displayCurrentBid),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: AppColors.onPrimary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                      ),
+                      icon: const Icon(Icons.gavel_rounded, size: 20),
+                      label: Text('Place Bid', style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary, fontSize: 16)),
+                    ),
+                  ),
+                ),
               ],
             );
-          }
+          }),
+        );
 
-          return Row(
-            children: [
-              // Message Seller button
-              Padding(
-                padding: const EdgeInsets.only(right: AppConstants.spaceSM),
-                child: OutlinedButton.icon(
-                  onPressed: () => _messageSeller(auction),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text('Chat'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                  ),
+        return AppBreakpoints.isDesktop(context)
+            ? Align(
+                alignment: Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: navBarContent,
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Minimum next bid', style: AppTextStyles.labelSmall.copyWith(color: AppColors.outline)),
-                    Text('PKR ${displayCurrentBid + 100}', style: AppTextStyles.priceMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppConstants.spaceMD),
-              SizedBox(
-                height: 52,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusSM),
-                    boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 14, offset: const Offset(0, 6))],
-                  ),
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showBidDialog(auction, displayCurrentBid),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      foregroundColor: AppColors.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusSM)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                    ),
-                    icon: const Icon(Icons.gavel_rounded, size: 20),
-                    label: Text('Place Bid', style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary, fontSize: 16)),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-      ) : const SizedBox.shrink(),
+              )
+            : navBarContent;
+      }) : const SizedBox.shrink(),
     );
   }
 
